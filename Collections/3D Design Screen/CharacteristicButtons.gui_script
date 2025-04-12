@@ -1,0 +1,539 @@
+local druid = require("druid.druid")
+
+function init(self)
+	self.druid = druid.new(self)
+	
+	self.button_type = gui.get_node("TypeButton")
+	self.text_typeButton = gui.get_node("TypeButtonText")
+	self.button_category = gui.get_node("CategoryButton")
+	self.text_categoryButton = gui.get_node("CategoryButtonText")
+	self.button_size = gui.get_node("SizeButton")
+	self.text_sizeButton = gui.get_node("SizeButtonText")
+	self.button_configuration = gui.get_node("ConfigurationButton")
+	self.text_configurationButton = gui.get_node("ConfigurationButtonText")
+	self.button_fueltype = gui.get_node("FuelTypeButton")
+	self.text_fueltypeButton = gui.get_node("FuelTypeButtonText")
+	self.button_fuelamount = gui.get_node("FuelAmountButton")
+	self.text_fuelamountButton = gui.get_node("FuelAmountButtonText")
+	self.button_engineconfig = gui.get_node("EngineConfigButton")
+	self.text_engineconfigButton = gui.get_node("EngineConfigButtonText")
+
+	-- set all button texts
+	gui.set_text(self.text_typeButton,G_UI_text.char_type)
+	gui.set_text(self.text_categoryButton,G_UI_text.char_category)
+	gui.set_text(self.text_sizeButton,G_UI_text.char_size)
+	gui.set_text(self.text_configurationButton,G_UI_text.char_config)
+	gui.set_text(self.text_fueltypeButton,G_UI_text.char_fueltype)
+	gui.set_text(self.text_fuelamountButton,G_UI_text.char_fuelamount)
+	gui.set_text(self.text_engineconfigButton,G_UI_text.char_engineconfig)
+
+	self.text_type = gui.get_node("TypeText")
+	self.text_category = gui.get_node("CategoryText")
+--	self.text_size = gui.get_node("SizeText")
+	self.text_configuration = gui.get_node("ConfigurationText")
+	self.text_fueltype = gui.get_node("FuelTypeText")
+	self.text_engineconfig = gui.get_node("EngineConfigText")
+
+	-- Create Druid buttons
+	self.druid:new_button("TypeButton", function()
+		print("Type button clicked")
+		create_popup_options(self, G_planeType_avail, "type")
+	end)
+	
+	self.druid:new_button("CategoryButton", function()
+		print("Category button clicked")
+		create_popup_options(self, G_planeCat_avail, "category")
+	end)
+	
+	self.druid:new_button("ConfigurationButton", function()
+		print("Configuration button clicked")
+		create_popup_options(self, G_planeConfig_avail, "configuration")
+	end)
+	
+	self.druid:new_button("FuelTypeButton", function()
+		print("Fuel Type button clicked")
+		create_popup_options(self, G_fuelType_avail, "fueltype")
+	end)
+	
+	self.druid:new_button("EngineConfigButton", function()
+		print("Engine Config button clicked")
+		create_engine_config_options(self)
+	end)
+	
+	-- calculate specs
+	recalculate_specs()
+
+	msg.post(".","set_customization_text", {value = true})
+	msg.post(".", "acquire_input_focus")
+
+	-- Store references to the popup nodes
+	self.popup_node = gui.get_node("PopupBackground")
+	self.option_nodes = {}  -- Will store the dynamically created option buttons
+	
+	-- Track which button type is currently active
+	self.active_button_type = nil
+	
+	-- Hide popup initially
+	gui.set_enabled(self.popup_node, false)
+	
+	self.druid:final()
+end
+
+function final(self)
+	-- Clean up any remaining option nodes
+	for _, node in ipairs(self.option_nodes) do
+		gui.delete_node(node)
+	end
+	self.option_nodes = {}
+	
+	self.druid:final()
+end
+
+function update(self, dt)
+	self.druid:update(dt)
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("recalculate_specs") then
+		recalculate_specs()
+	end
+	if message_id == hash("set_customization_text") then
+		gui.set_text(self.text_type, G_planeType_avail[G_currentPlane.planeType].name)
+		gui.set_text(self.text_category, G_planeCat_avail[G_currentPlane.planeCat].name)
+--		gui.set_text(self.text_size,"1")
+		gui.set_text(self.text_configuration, G_planeConfig_avail[G_currentPlane.planeConfig].name)
+		gui.set_text(self.text_fueltype, G_fuelType_avail[G_currentPlane.fuelType].name)
+--		gui.set_text(self.text_fuelamount,"1")
+		gui.set_text(self.text_engineconfig, tostring(G_currentPlane.engineConfig))
+	end
+end
+
+-- Helper function to create popup options
+function create_popup_options(self, options_data, button_type)
+	-- Clear existing options if any
+	for _, node in ipairs(self.option_nodes) do
+		gui.delete_node(node)
+	end
+	self.option_nodes = {}
+	
+	-- Show popup
+	gui.set_enabled(self.popup_node, true)
+	
+	-- Get popup background position and size
+	local popup_pos = gui.get_position(self.popup_node)
+	local popup_size = gui.get_size(self.popup_node)
+	
+	-- Make sure OptionTemplate exists and we can get its size
+	local template = gui.get_node("OptionTemplate")
+	if not template then
+		print("ERROR: OptionTemplate node not found!")
+		return
+	end
+	
+	local button_width = gui.get_size(template).x
+	local button_height = gui.get_size(template).y
+	
+	-- Grid layout configuration
+	local padding = 20
+	local columns = 3
+	
+	-- Calculate total grid width
+	local total_grid_width = button_width * columns + padding * (columns - 1)
+	
+	-- Calculate starting positions relative to popup's top-left corner
+	local start_x = popup_pos.x - popup_size.x/2 + (popup_size.x - total_grid_width)/2
+	local start_y = popup_pos.y + popup_size.y/2 - 100
+	
+	-- Store the active button type
+	self.active_button_type = button_type
+	
+	-- Clear previous availability data
+	self.button_availability = {}
+	
+	for i, option_data in ipairs(options_data) do
+		local column = (i - 1) % columns
+		local row = math.floor((i - 1) / columns)
+		
+		local x = start_x + column * (button_width + padding)
+		local y = start_y - row * (button_height + padding)
+		local pos = vmath.vector3(x, y, 0)
+		
+		-- Clone both the button and its text node
+		local nodes = gui.clone_tree(template)
+		local button = nodes[hash("OptionTemplate")]
+		local text_node = nodes[hash("OptionTemplateText")]
+		
+		gui.set_position(button, pos)
+		gui.set_text(text_node, option_data.name)
+		
+		-- Make sure everything is visible by default
+		gui.set_enabled(button, true)
+		gui.set_enabled(text_node, true)
+		
+		-- Store availability in our table
+		self.button_availability[i] = option_data.avail == 1
+		
+		-- If not available, gray out the button but keep text white for contrast
+		if option_data.avail == 0 then
+			gui.set_color(button, vmath.vector4(0.5, 0.5, 0.5, 1))
+			gui.set_color(text_node, vmath.vector4(1, 1, 1, 1)) -- Keep text white for contrast
+		end
+		
+		table.insert(self.option_nodes, button)
+	end
+	
+	return true
+end
+
+-- Helper function to create engine configuration options based on planeType
+function create_engine_config_options(self)
+	local options = {}
+	
+	-- Determine available options based on planeType
+	if G_currentPlane.planeType <= 2 then
+		-- For planeType 1 or 2, options are 1, 2, 3, and 4
+		for i = 1, 4 do
+			table.insert(options, {name = tostring(i), avail = 1})
+		end
+	else
+		-- For planeType > 2, options are 2, 3, and 4
+		for i = 2, 4 do
+			table.insert(options, {name = tostring(i), avail = 1})
+		end
+	end
+	
+	return create_popup_options(self, options, "engineconfig")
+end
+
+-- Helper function to handle option selection
+function handle_option_selection(self, i)
+	if not self.button_availability[i] then
+		return false
+	end
+	
+	local selected = false
+	
+	if self.active_button_type == "type" then
+		G_currentPlane.planeType = i
+		gui.set_text(self.text_type, G_planeType_avail[i].name)
+		
+		-- Check if we need to adjust engineConfig when planeType changes
+		if G_currentPlane.planeType > 2 and G_currentPlane.engineConfig == 1 then
+			-- If plane type > 2 and engine config is 1, set it to 2 since 1 is not an option
+			G_currentPlane.engineConfig = 2
+			G_engineConfig = 2  -- Keep this for backward compatibility
+			gui.set_text(self.text_engineconfig, tostring(G_currentPlane.engineConfig))
+		end
+		
+		selected = true
+	elseif self.active_button_type == "category" then
+		G_currentPlane.planeCat = i
+		gui.set_text(self.text_category, G_planeCat_avail[i].name)
+		G_currentPlane.markup = G_planeCat_avail[i].markup_start
+		selected = true
+	elseif self.active_button_type == "configuration" then
+		G_currentPlane.planeConfig = i
+		gui.set_text(self.text_configuration, G_planeConfig_avail[i].name)
+		selected = true
+	elseif self.active_button_type == "fueltype" then
+		G_currentPlane.fuelType = i
+		gui.set_text(self.text_fueltype, G_fuelType_avail[i].name)
+		selected = true
+	elseif self.active_button_type == "engineconfig" then
+		-- For engine config, we need to handle the options differently based on planeType
+		local value
+		if G_currentPlane.planeType <= 2 then
+			-- For planeType 1 or 2, options are 1, 2, 3, and 4
+			value = i
+		else
+			-- For planeType > 2, options are 2, 3, and 4
+			value = i + 1
+		end
+		G_currentPlane.engineConfig = value
+		G_engineConfig = value  -- Keep this for backward compatibility
+		gui.set_text(self.text_engineconfig, tostring(value))
+		selected = true
+	end
+	
+	if selected then
+		-- Close popup and clean up
+		gui.set_enabled(self.popup_node, false)
+		for _, option_node in ipairs(self.option_nodes) do
+			gui.delete_node(option_node)
+		end
+		self.option_nodes = {}
+		self.active_button_type = nil
+
+		-- finish by recalculating specs
+		recalculate_specs()
+	end
+	
+	return selected
+end
+
+function on_input(self, action_id, action)
+	local consumed = self.druid:on_input(action_id, action)
+	if consumed then return true end
+	
+	if action_id == hash("touch") and action.pressed then
+		-- Check for clicks on popup options
+		if gui.is_enabled(self.popup_node) then
+			for i, node in ipairs(self.option_nodes) do
+				if gui.pick_node(node, action.x, action.y) then
+					return handle_option_selection(self, i)
+				end
+			end
+			
+			-- Close popup if clicked outside option buttons
+			if not gui.pick_node(self.popup_node, action.x, action.y) then
+				gui.set_enabled(self.popup_node, false)
+				for _, option_node in ipairs(self.option_nodes) do
+					gui.delete_node(option_node)
+				end
+				self.option_nodes = {}
+				self.active_button_type = nil
+				return true
+			end
+		end
+	end
+	
+	return false
+end
+
+local function rangeCalc()
+	-- Calculate base range from planeType
+	local base_range = G_planeType_avail[G_currentPlane.planeType].base_range or 0
+	
+	-- Apply category modifier
+	base_range = base_range * (G_planeCat_avail[G_currentPlane.planeCat].range_factor or 1.0)
+	
+	-- Fuel amount factor (more fuel = more range, but with diminishing returns)
+	local base_fuel = G_planeCat_avail[G_currentPlane.planeCat].fuel_mid
+	local fuel_ratio = G_currentPlane.spec_fuel / base_fuel
+	local fuel_factor = math.sqrt(fuel_ratio) -- Square root for diminishing returns
+	
+	-- Weight penalty (heavier planes consume more fuel per distance)
+	local base_weight = G_planeCat_avail[G_currentPlane.planeCat].weight_mid
+	local weight_ratio = (G_currentPlane.spec_weight - G_currentPlane.spec_fuel) / base_weight -- Consider empty weight
+	local weight_factor = 1.0 / (0.7 + (0.3 * weight_ratio)) -- Heavier planes have worse range
+	
+	-- Engine count penalty (more engines = more fuel consumption)
+	local engine_count_factor = 1.0 - ((G_currentPlane.engineConfig - 1) * 0.05)
+	
+	-- Apply fuel type efficiency
+	local fuel_type_factor = G_fuelType_avail[G_currentPlane.fuelType].range_efficiency or 1.0
+	
+	-- Compatibility bonus (optimal engine-fuel pairings)
+	local compatibility_factor = 1.0
+	if (G_currentPlane.planeType == 1 and G_currentPlane.fuelType == 1) or -- Piston with gasoline
+	   ((G_currentPlane.planeType == 3 or G_currentPlane.planeType == 4) and G_currentPlane.fuelType == 2) then -- Jets with kerosene
+		compatibility_factor = 1.15 -- 15% bonus for optimal fuel
+	end
+	
+	-- Size adjustment (usually smaller planes within category have better range)
+	local size_factor = 1.0 - (G_currentPlane.planeSize * 0.1) -- Up to 10% penalty for larger sizes
+	
+	-- Calculate final range
+	G_currentPlane.spec_range = math.floor(base_range * fuel_factor * weight_factor * engine_count_factor * 
+							 fuel_type_factor * compatibility_factor * size_factor)
+	
+	-- Special case for supersonic - they have lower range due to high fuel consumption
+	if G_currentPlane.planeCat == 5 then
+		G_currentPlane.spec_range = math.floor(G_currentPlane.spec_range * 0.7)
+	end
+
+	-- Convert range from nautical miles to kilometers
+	G_currentPlane.spec_range = math.floor(G_currentPlane.spec_range * 1.852)
+	
+end
+
+local function emissionsCalc()
+	-- Base emissions for this engine type
+	local base_emissions = G_planeType_avail[G_currentPlane.planeType].base_emissions or 0
+	
+	-- Scale by aircraft category
+	base_emissions = base_emissions * (G_planeCat_avail[G_currentPlane.planeCat].emissions_factor or 1.0)
+	
+	-- Scale by number of engines
+	local engine_count_factor = G_currentPlane.engineConfig
+	
+	-- Scale by size within category
+	local size_factor = 0.8 + (G_currentPlane.planeSize * 0.4) -- 0.8-1.2 range
+	
+	-- Apply fuel type emissions factor
+	local fuel_factor = G_fuelType_avail[G_currentPlane.fuelType].emissions_factor or 1.0
+	
+	-- Calculate final emissions (kg CO2 per hour)
+	G_currentPlane.spec_emissions = math.floor(base_emissions * engine_count_factor * size_factor * fuel_factor)
+	
+end
+
+local function efficiencyCalc()
+	-- Base consumption for this engine type
+	local base_consumption = G_planeType_avail[G_currentPlane.planeType].base_consumption or 0
+	
+	-- Scale by aircraft category
+	base_consumption = base_consumption * (1.0 / (G_planeCat_avail[G_currentPlane.planeCat].efficiency_factor or 1.0))
+	
+	-- Scale by number of engines
+	local engine_count_factor = G_currentPlane.engineConfig
+	
+	-- Scale by size within category
+	local size_factor = 0.9 + (G_currentPlane.planeSize * 0.2) -- 0.9-1.1 range
+	
+	-- Apply fuel type efficiency factor
+	local fuel_factor = 1.0 / (G_fuelType_avail[G_currentPlane.fuelType].consumption_efficiency or 1.0)
+	
+	-- Calculate total fuel consumption per hour
+	local total_consumption = base_consumption * engine_count_factor * size_factor * fuel_factor
+	
+	-- Calculate per-seat efficiency (fuel per seat per hour)
+	-- Convert to fuel per seat-mile using average speed
+	if G_currentPlane.spec_avgspeed > 0 then
+		-- Calculate passenger efficiency for all plane types
+		local passenger_capacity = math.max(G_currentPlane.spec_passCapacity, 1)
+		G_currentPlane.spec_passEfficiency = math.floor((total_consumption / passenger_capacity / G_currentPlane.spec_avgspeed) * 1000) / 1000
+		
+		-- Calculate cargo efficiency for all plane types
+		local cargo_capacity = math.max(G_currentPlane.spec_cargoCapacity / 1000, 0.1) -- in tons, minimum 0.1
+		G_currentPlane.spec_cargoEfficiency = math.floor((total_consumption / cargo_capacity / G_currentPlane.spec_avgspeed) * 1000) / 1000
+	else
+		-- Avoid division by zero
+		G_currentPlane.spec_passEfficiency = 0
+		G_currentPlane.spec_cargoEfficiency = 0
+	end
+	
+end
+
+local function speedCalc()
+	-- Calculate average and top speed based on aircraft parameters
+	
+	-- Calculate base speed from planeType
+	local base_speed = G_planeType_avail[G_currentPlane.planeType].base_speed or 0
+	
+	-- Apply category modifier
+	base_speed = base_speed * (G_planeCat_avail[G_currentPlane.planeCat].speed_factor or 1.0)
+	
+	-- Size adjustment within category (smaller planes generally faster)
+	local size_mod = 1.0 - (G_currentPlane.planeSize * 0.1)  -- 0-10% penalty for larger size
+	
+	-- Engine count bonus (diminishing returns)
+	local engine_count_mod = 1.0 + (math.log(G_currentPlane.engineConfig) * 0.08)
+	
+	-- Weight penalty (using a logarithmic scale to avoid extremes)
+	-- Base weight is different for each category, so normalize based on category
+	local base_weight = G_planeCat_avail[G_currentPlane.planeCat].weight_mid
+	local weight_ratio = G_currentPlane.spec_weight / base_weight
+	local weight_mod = 1.0 - (math.log10(weight_ratio + 0.1) * 0.1)
+	weight_mod = math.max(weight_mod, 0.7)  -- Limit max penalty
+	
+	-- Apply fuel type efficiency - using the energy_density value already in G_fuelType_avail
+	local fuel_mod = G_fuelType_avail[G_currentPlane.fuelType].energy_density or 1.0
+	
+	-- Compatibility check (certain engines work better with certain fuels)
+	local compatibility_mod = 1.0
+	if (G_currentPlane.planeType == 1 and G_currentPlane.fuelType == 1) or -- Piston with gasoline
+	   ((G_currentPlane.planeType == 3 or G_currentPlane.planeType == 4) and G_currentPlane.fuelType == 2) then -- Jets with kerosene
+		compatibility_mod = 1.1 -- 10% bonus for optimal fuel
+	end
+	
+	-- Calculate final speeds
+	G_currentPlane.spec_avgspeed = math.floor(base_speed * size_mod * engine_count_mod * weight_mod * fuel_mod * compatibility_mod)
+	G_currentPlane.spec_topspeed = math.floor(G_currentPlane.spec_avgspeed * 1.25)  -- Top speed ~25% higher than cruise
+	
+	-- Special case for supersonic aircraft
+	if G_currentPlane.planeCat == 5 and (G_currentPlane.planeType == 3 or G_currentPlane.planeType == 4) then
+		G_currentPlane.spec_topspeed = math.floor(G_currentPlane.spec_topspeed * 1.6)  -- Push above Mach 1
+	end
+	
+end
+
+-- Add this function to calculate cargo capacity based on passenger capacity
+local function calculateCargoCapacity()
+	-- Interpolate cargo capacity based on planeSize
+	local base_cargo
+	if G_currentPlane.planeSize <= 0.5 then
+		-- Linear interpolation between low and mid values
+		local ratio = G_currentPlane.planeSize / 0.5  -- 0 to 1 within this range
+		base_cargo = G_planeCat_avail[G_currentPlane.planeCat].cargo_low + 
+					(G_planeCat_avail[G_currentPlane.planeCat].cargo_mid - G_planeCat_avail[G_currentPlane.planeCat].cargo_low) * ratio
+	else
+		-- Linear interpolation between mid and high values
+		local ratio = (G_currentPlane.planeSize - 0.5) / 0.5  -- 0 to 1 within this range
+		base_cargo = G_planeCat_avail[G_currentPlane.planeCat].cargo_mid + 
+					(G_planeCat_avail[G_currentPlane.planeCat].cargo_high - G_planeCat_avail[G_currentPlane.planeCat].cargo_mid) * ratio
+	end
+	
+	-- Apply engine type modifier from the global table
+	base_cargo = base_cargo * (G_planeType_avail[G_currentPlane.planeType].cargo_factor or 1.0)
+	
+	-- Additional bonus for cargo-configured aircraft
+	if G_currentPlane.planeConfig == 2 then -- Cargo configuration
+		base_cargo = base_cargo * 1.4 -- 40% more efficient when designed for cargo
+	end
+	
+	-- Round to nearest kg
+	G_currentPlane.spec_cargoCapacity = math.floor(base_cargo)
+	
+	return G_currentPlane.spec_cargoCapacity
+end
+
+
+function recalculate_specs()
+	-- Calculate weight based on planeSize
+	if G_currentPlane.planeSize <= 0.5 then
+		-- Linear interpolation between low and mid
+		local ratio = G_currentPlane.planeSize / 0.5  -- 0 to 1 within this range
+		G_currentPlane.spec_weight = G_planeCat_avail[G_currentPlane.planeCat].weight_low + 
+		                (G_planeCat_avail[G_currentPlane.planeCat].weight_mid - G_planeCat_avail[G_currentPlane.planeCat].weight_low) * ratio
+		
+		-- Calculate capacity using the same approach
+		G_currentPlane.spec_passCapacity = G_planeCat_avail[G_currentPlane.planeCat].pass_low + 
+		                  (G_planeCat_avail[G_currentPlane.planeCat].pass_mid - G_planeCat_avail[G_currentPlane.planeCat].pass_low) * ratio
+		G_currentPlane.spec_passCapacity = math.floor(G_currentPlane.spec_passCapacity)		  
+	else
+		-- Linear interpolation between mid and high
+		local ratio = (G_currentPlane.planeSize - 0.5) / 0.5  -- 0 to 1 within this range
+		G_currentPlane.spec_weight = G_planeCat_avail[G_currentPlane.planeCat].weight_mid + 
+		                (G_planeCat_avail[G_currentPlane.planeCat].weight_high - G_planeCat_avail[G_currentPlane.planeCat].weight_mid) * ratio
+		
+		-- Calculate capacity using the same approach
+		G_currentPlane.spec_passCapacity = G_planeCat_avail[G_currentPlane.planeCat].pass_mid + 
+		                  (G_planeCat_avail[G_currentPlane.planeCat].pass_high - G_planeCat_avail[G_currentPlane.planeCat].pass_mid) * ratio
+		G_currentPlane.spec_passCapacity = math.floor(G_currentPlane.spec_passCapacity)	
+	end
+
+	-- Add engine weight based on engine type and number of engines
+	local engine_weight = G_planeType_avail[G_currentPlane.planeType].weight * G_currentPlane.engineConfig
+	G_currentPlane.spec_weight = G_currentPlane.spec_weight + engine_weight
+
+	-- Calculate fuel amount based on FuelSlider
+	local fuel_low = G_planeCat_avail[G_currentPlane.planeCat].fuel_low
+	local fuel_mid = G_planeCat_avail[G_currentPlane.planeCat].fuel_mid
+	local fuel_high = G_planeCat_avail[G_currentPlane.planeCat].fuel_high
+	
+	if G_currentPlane.FuelSlider <= 0.5 then
+		-- Interpolate between low and mid
+		local factor = G_currentPlane.FuelSlider / 0.5
+		G_currentPlane.spec_fuel = fuel_low + factor * (fuel_mid - fuel_low)
+	else
+		-- Interpolate between mid and high
+		local factor = (G_currentPlane.FuelSlider - 0.5) / 0.5
+		G_currentPlane.spec_fuel = fuel_mid + factor * (fuel_high - fuel_mid)
+	end
+
+	G_currentPlane.spec_weight = G_currentPlane.spec_weight + G_currentPlane.spec_fuel
+
+	speedCalc()
+	rangeCalc()
+	emissionsCalc()
+	efficiencyCalc()
+	calculateCargoCapacity()
+	
+	msg.post("SpecificationsContainer", "refresh_specs_text")
+end
+
+function on_reload(self)
+	self.druid:on_input_interrupt()
+end
+

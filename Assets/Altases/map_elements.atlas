@@ -1,0 +1,7 @@
+images {
+  image: "/Assets/Images/airport_dot.png"
+}
+images {
+  image: "/Assets/Images/route_line.png"
+}
+extrude_borders: 2

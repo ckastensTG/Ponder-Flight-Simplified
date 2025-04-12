@@ -1,0 +1,208 @@
+function init(self)
+    -- Hide the popup initially
+    self.is_visible = false
+    self.root_nodes = {"background", "title", "message", "input_bg", "confirm_button", "modal_bg"}
+    self.input_text_node = gui.get_node("input_text")
+    self.confirm_button = gui.get_node("confirm_button")
+    self.title_node = gui.get_node("title")
+    self.message_node = gui.get_node("message")
+    self.confirm_text = gui.get_node("confirm_text")
+    self.input_bg = gui.get_node("input_bg")
+    
+    -- Set initial state
+    self.callback_url = nil
+    self.callback_message = nil
+    self.current_text = ""
+    self.placeholder = "Enter name here"
+    self.has_keyboard_focus = false
+    
+    -- Hide all nodes
+    for _, node_id in ipairs(self.root_nodes) do
+        local node = gui.get_node(node_id)
+        gui.set_enabled(node, false)
+    end
+    
+    -- Set up keyboard focus
+    gui.set_render_order(15) -- Make sure popup appears on top
+end
+
+function on_text_input(self, text)
+    if not self.is_visible or not self.has_keyboard_focus then
+        return
+    end
+    
+    if text == "\b" then
+        -- Handle backspace
+        if #self.current_text > 0 then
+            self.current_text = string.sub(self.current_text, 1, #self.current_text - 1)
+        end
+    elseif text == "\r" or text == "\n" then
+        -- Handle enter/return key - submit the form
+        submit_form(self)
+    else
+        -- Add character to current text
+        self.current_text = self.current_text .. text
+    end
+    
+    -- Update displayed text
+    if self.current_text == "" then
+        gui.set_text(self.input_text_node, self.placeholder)
+    else
+        gui.set_text(self.input_text_node, self.current_text)
+    end
+end
+
+function submit_form(self)
+    local name = self.current_text
+    if name == "" or name == self.placeholder then
+        name = nil
+    end
+    
+    if self.callback_url and self.callback_message then
+        msg.post(self.callback_url, self.callback_message, {name = name})
+    end
+    
+    -- Hide the popup
+    msg.post(".", "hide_popup")
+end
+
+function final(self)
+    -- Add finalization code here
+end
+
+function update(self, dt)
+    -- Add update code here
+end
+
+function on_message(self, message_id, message, sender)
+    if message_id == hash("show_popup") then
+        -- Show the popup with the provided parameters
+        self.callback_url = message.callback_url
+        self.callback_message = message.callback_message
+        
+        -- Set text content
+        gui.set_text(self.title_node, message.title or "Enter Information")
+        gui.set_text(self.message_node, message.message or "Please enter information:")
+        
+        -- Set placeholder text
+        self.placeholder = message.placeholder or "Enter text here"
+        self.current_text = ""
+        gui.set_text(self.input_text_node, self.placeholder)
+        
+        -- Set confirm button text
+        gui.set_text(self.confirm_text, message.confirm_text or "Confirm")
+        
+        -- Show all nodes
+        for _, node_id in ipairs(self.root_nodes) do
+            local node = gui.get_node(node_id)
+            gui.set_enabled(node, true)
+        end
+        
+        -- Acquire input focus
+        msg.post(".", "acquire_input_focus")
+        self.is_visible = true
+        self.has_keyboard_focus = false
+    elseif message_id == hash("hide_popup") then
+        -- Hide the popup
+        for _, node_id in ipairs(self.root_nodes) do
+            local node = gui.get_node(node_id)
+            gui.set_enabled(node, false)
+        end
+        
+        -- Hide keyboard if it's showing
+        if self.has_keyboard_focus then
+            gui.hide_keyboard()
+            self.has_keyboard_focus = false
+        end
+        
+        -- Release input focus
+        msg.post(".", "release_input_focus")
+        self.is_visible = false
+    end
+end
+
+function on_input(self, action_id, action)
+    if not self.is_visible then
+        return false
+    end
+    
+    -- Handle text input directly
+    if action_id == hash("text") then
+        if self.has_keyboard_focus then
+            on_text_input(self, action.text)
+            return true
+        end
+    end
+    
+    -- Handle backspace key
+    if action_id == hash("key_backspace") and action.pressed and self.has_keyboard_focus then
+        on_text_input(self, "\b")
+        return true
+    end
+    
+    -- Handle enter/return key
+    if (action_id == hash("key_enter")) and action.pressed and self.has_keyboard_focus then
+        submit_form(self)
+        return true
+    end
+    
+    if action_id == hash("touch") and action.pressed then
+        -- Check if confirm button was clicked
+        if gui.pick_node(self.confirm_button, action.x, action.y) then
+            submit_form(self)
+            return true
+        end
+        
+        -- Check if input field was clicked
+        if gui.pick_node(self.input_bg, action.x, action.y) then
+            -- Clear placeholder text when clicked
+            if not self.has_keyboard_focus then
+                if self.current_text == "" or self.current_text == self.placeholder then
+                    self.current_text = ""
+                    gui.set_text(self.input_text_node, "")
+                end
+                
+                -- Show keyboard for mobile devices
+                gui.show_keyboard(gui.KEYBOARD_TYPE_DEFAULT, false)
+                self.has_keyboard_focus = true
+                
+                -- Debug message
+                print("Keyboard focus acquired")
+            end
+            return true
+        else
+            -- Clicked outside the input field
+            if self.has_keyboard_focus then
+                gui.hide_keyboard()
+                self.has_keyboard_focus = false
+                
+                -- Restore placeholder if needed
+                if self.current_text == "" then
+                    gui.set_text(self.input_text_node, self.placeholder)
+                end
+                
+                -- Debug message
+                print("Keyboard focus lost")
+            end
+        end
+    elseif action_id == hash("key_back") or action_id == hash("key_esc") then
+        -- Handle back button or escape key
+        if self.has_keyboard_focus then
+            gui.hide_keyboard()
+            self.has_keyboard_focus = false
+            
+            -- Restore placeholder if needed
+            if self.current_text == "" then
+                gui.set_text(self.input_text_node, self.placeholder)
+            end
+            return true
+        end
+    end
+    
+    -- Consume all input when popup is visible
+    return true
+end
+
+function on_reload(self)
+    -- Add reload-handling code here
+end 

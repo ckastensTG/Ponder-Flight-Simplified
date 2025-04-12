@@ -1,0 +1,10 @@
+name: "LanguageScreen"
+scale_along_z: 0
+embedded_instances {
+  id: "LanguageButtons"
+  data: "components {\n"
+  "  id: \"LanguageButtons\"\n"
+  "  component: \"/Collections/Language Select/LanguageButtons.gui\"\n"
+  "}\n"
+  ""
+}

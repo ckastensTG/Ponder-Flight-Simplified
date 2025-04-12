@@ -1,0 +1,652 @@
+function init(self)
+	-- Load the city locations from the data file
+	self.locations = require("LocFiles.Map_Locs")
+	self.dots = {}
+	self.selected_dot = nil
+	self.second_selected_dot = nil  -- For tracking the second selected city
+	self.popup_visible = false
+	self.route_lines = {}
+	
+	-- Define dot sizes based on category
+	self.dot_sizes = {
+		[1] = 20, -- Small cities
+		[2] = 30, -- Medium cities
+		[3] = 40  -- Large cities
+	}
+	
+	-- Define dot colors
+	self.dot_colors = {
+		normal = vmath.vector4(0.2, 0.4, 0.8, 1),
+		hover = vmath.vector4(0.4, 0.6, 1, 1),
+		selected = vmath.vector4(1, 0.5, 0, 1),
+		second_selected = vmath.vector4(0.8, 0.2, 0.2, 1)  -- Color for second selected city
+	}
+	
+	-- Create a dot for each location
+	for i, loc in ipairs(self.locations) do
+		local dot_size = self.dot_sizes[loc.category]
+		local dot_id = "city_dot_" .. i
+		
+		-- Create the dot node
+		local dot = gui.new_box_node(vmath.vector3(loc.pos[1], loc.pos[2], 0), vmath.vector3(dot_size, dot_size, 0))
+		gui.set_id(dot, dot_id)
+		gui.set_color(dot, self.dot_colors.normal)
+		gui.set_pivot(dot, gui.PIVOT_CENTER)
+		
+		-- Create the label node
+		local label = gui.new_text_node(vmath.vector3(loc.pos[1], loc.pos[2] - dot_size/2 - 15, 0), loc.name)
+		gui.set_id(label, dot_id .. "_label")
+		gui.set_font(label, "system_font")
+		gui.set_color(label, vmath.vector4(0, 0, 0, 1))
+		gui.set_scale(label, vmath.vector3(0.8, 0.8, 1))
+		gui.set_pivot(label, gui.PIVOT_N)
+		
+		-- Store references to our dots
+		self.dots[i] = {
+			node = dot,
+			label = label,
+			location = loc,
+			hover = false,
+			selected = false
+		}
+	end
+	
+	-- Acquire input focus to handle interactions
+	msg.post(".", "acquire_input_focus")
+	
+	-- Draw all existing route lines when the map screen initializes
+	update_route_lines(self)
+end
+
+function final(self)
+	-- Release input focus when the script is finalized
+	msg.post(".", "release_input_focus")
+	
+	-- Cleanup popup if visible
+	if self.popup_visible then
+		hide_route_popup(self)
+	end
+	
+	-- Clean up route lines
+	if self.route_lines then
+		for _, line in ipairs(self.route_lines) do
+			gui.delete_node(line)
+		end
+		self.route_lines = nil
+	end
+end
+
+function update(self, dt)
+	-- Add update code here
+	-- Learn more: https://defold.com/manuals/script/
+	-- Remove this function if not needed
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("refresh_routes") then
+		-- Update route lines when requested
+		update_route_lines(self)
+	end
+end
+
+function on_input(self, action_id, action)
+	if action_id == nil then
+		-- Handle mouse movement
+		local mx, my = action.x, action.y
+		
+		-- Check for hover over dots
+		for i, dot in ipairs(self.dots) do
+			local pos = gui.get_position(dot.node)
+			local size = gui.get_size(dot.node)
+			local half_size = size.x / 2
+			
+			-- Check if mouse is over the dot
+			local hover = mx >= pos.x - half_size and mx <= pos.x + half_size and
+						 my >= pos.y - half_size and my <= pos.y + half_size
+			
+			-- Update dot appearance if hover state changed
+			if hover ~= dot.hover then
+				dot.hover = hover
+				if not dot.selected then
+					if hover then
+						gui.set_color(dot.node, self.dot_colors.hover)
+						gui.set_scale(dot.node, vmath.vector3(1.1, 1.1, 1))
+					else
+						gui.set_color(dot.node, self.dot_colors.normal)
+						gui.set_scale(dot.node, vmath.vector3(1, 1, 1))
+					end
+				end
+			end
+		end
+		
+		-- Handle popup interactions if it's visible
+		if self.popup_visible then
+			-- Check for hover over plane option buttons
+			if self.popup_plane_buttons then
+				for i, button_data in ipairs(self.popup_plane_buttons) do
+					if gui.pick_node(button_data.node, mx, my) then
+						if not button_data.hover then
+							button_data.hover = true
+							gui.set_color(button_data.node, vmath.vector4(0.4, 0.4, 0.4, 1))
+						end
+					else
+						if button_data.hover then
+							button_data.hover = false
+							gui.set_color(button_data.node, vmath.vector4(0.3, 0.3, 0.3, 1))
+						end
+					end
+				end
+			end
+			
+			-- Check for hover over close button
+			if gui.pick_node(self.popup_close_button, mx, my) then
+				if not self.close_button_hover then
+					self.close_button_hover = true
+					gui.set_color(self.popup_close_button, vmath.vector4(1, 0.4, 0.4, 1))
+				end
+			else
+				if self.close_button_hover then
+					self.close_button_hover = false
+					gui.set_color(self.popup_close_button, vmath.vector4(0.8, 0.3, 0.3, 1))
+				end
+			end
+		end
+	elseif action_id == hash("touch") and action.pressed then
+		-- If popup is visible, handle popup interactions first
+		if self.popup_visible then
+			-- Check if clicked on a plane assignment button
+			if self.popup_plane_buttons then
+				for i, button_data in ipairs(self.popup_plane_buttons) do
+					if gui.pick_node(button_data.node, action.x, action.y) then
+						-- Plane selected for route assignment
+						assign_plane_to_route(self, button_data.plane_data)
+						return true
+					end
+				end
+			end
+			
+			-- Check if clicked close button
+			if gui.pick_node(self.popup_close_button, action.x, action.y) then
+				hide_route_popup(self)
+				return true
+			end
+			
+			-- Check if clicked outside popup to close it
+			if not gui.pick_node(self.popup_container, action.x, action.y) then
+				hide_route_popup(self)
+				return true
+			end
+			
+			return true
+		end
+		
+		-- Handle clicking on dots
+		local mx, my = action.x, action.y
+		local clicked_dot = nil
+		
+		-- Check if a dot was clicked
+		for i, dot in ipairs(self.dots) do
+			local pos = gui.get_position(dot.node)
+			local size = gui.get_size(dot.node)
+			local half_size = size.x / 2
+			
+			-- Check if mouse is over the dot
+			if mx >= pos.x - half_size and mx <= pos.x + half_size and
+			   my >= pos.y - half_size and my <= pos.y + half_size then
+				clicked_dot = dot
+				break
+			end
+		end
+		
+		-- Update selection
+		if clicked_dot then
+			if self.selected_dot == nil then
+				-- First selection
+				self.selected_dot = clicked_dot
+				clicked_dot.selected = true
+				gui.set_color(clicked_dot.node, self.dot_colors.selected)
+				gui.set_scale(clicked_dot.node, vmath.vector3(1.2, 1.2, 1))
+				print("First city selected: " .. clicked_dot.location.name)
+			elseif self.selected_dot == clicked_dot then
+				-- Deselect if clicking the same dot
+				gui.set_color(clicked_dot.node, clicked_dot.hover and self.dot_colors.hover or self.dot_colors.normal)
+				gui.set_scale(clicked_dot.node, clicked_dot.hover and vmath.vector3(1.1, 1.1, 1) or vmath.vector3(1, 1, 1))
+				clicked_dot.selected = false
+				self.selected_dot = nil
+			elseif self.second_selected_dot == clicked_dot then
+				-- Deselect second city if clicking it again
+				gui.set_color(clicked_dot.node, clicked_dot.hover and self.dot_colors.hover or self.dot_colors.normal)
+				gui.set_scale(clicked_dot.node, clicked_dot.hover and vmath.vector3(1.1, 1.1, 1) or vmath.vector3(1, 1, 1))
+				clicked_dot.selected = false
+				self.second_selected_dot = nil
+			else
+				-- We have a first selection and clicked a different dot
+				
+				-- If we already had a second selection, deselect it first
+				if self.second_selected_dot then
+					gui.set_color(self.second_selected_dot.node, self.second_selected_dot.hover and self.dot_colors.hover or self.dot_colors.normal)
+					gui.set_scale(self.second_selected_dot.node, self.second_selected_dot.hover and vmath.vector3(1.1, 1.1, 1) or vmath.vector3(1, 1, 1))
+					self.second_selected_dot.selected = false
+				end
+				
+				-- Set new second selection
+				self.second_selected_dot = clicked_dot
+				clicked_dot.selected = true
+				gui.set_color(clicked_dot.node, self.dot_colors.second_selected)
+				gui.set_scale(clicked_dot.node, vmath.vector3(1.2, 1.2, 1))
+				print("Second city selected: " .. clicked_dot.location.name)
+				
+				-- We now have two selected cities, show the route popup
+				show_route_popup(self, self.selected_dot, self.second_selected_dot)
+			end
+		else
+			-- Clicked empty space, clear all selections
+			if self.selected_dot then
+				gui.set_color(self.selected_dot.node, self.selected_dot.hover and self.dot_colors.hover or self.dot_colors.normal)
+				gui.set_scale(self.selected_dot.node, self.selected_dot.hover and vmath.vector3(1.1, 1.1, 1) or vmath.vector3(1, 1, 1))
+				self.selected_dot.selected = false
+				self.selected_dot = nil
+			end
+			
+			if self.second_selected_dot then
+				gui.set_color(self.second_selected_dot.node, self.second_selected_dot.hover and self.dot_colors.hover or self.dot_colors.normal)
+				gui.set_scale(self.second_selected_dot.node, self.second_selected_dot.hover and vmath.vector3(1.1, 1.1, 1) or vmath.vector3(1, 1, 1))
+				self.second_selected_dot.selected = false
+				self.second_selected_dot = nil
+			end
+		end
+	end
+end
+
+-- Function to calculate route distance (in km)
+function calculate_distance(pos1, pos2)
+	local dx = pos1[1] - pos2[1]
+	local dy = pos1[2] - pos2[2]
+	local pixel_distance = math.sqrt(dx*dx + dy*dy)
+	return pixel_distance * 10  -- Each pixel is 10km
+end
+
+-- Function to determine valid plane categories for a route
+function get_valid_plane_categories(airport1_category, airport2_category)
+	local valid_categories = {}
+	
+	-- Define which plane categories can use each airport category
+	local airport_compatible_planes = {
+		[1] = {1, 2},      -- Category 1 airports can handle plane categories 1 or 2
+		[2] = {1, 2, 3},   -- Category 2 airports can handle plane categories 1, 2, or 3
+		[3] = {2, 3, 4, 5} -- Category 3 airports can handle plane categories 2, 3, 4, or 5
+	}
+	
+	-- Find intersection of plane categories that can use both airports
+	for _, cat1 in ipairs(airport_compatible_planes[airport1_category]) do
+		for _, cat2 in ipairs(airport_compatible_planes[airport2_category]) do
+			if cat1 == cat2 then
+				table.insert(valid_categories, cat1)
+			end
+		end
+	end
+	
+	return valid_categories
+end
+
+-- Function to get eligible planes from fleet for this route
+function get_eligible_fleet_planes(self, valid_categories, required_range)
+	local eligible_planes = {}
+	
+	-- Check if GAirline_fleet exists
+	if not GAirline_fleet then
+		return eligible_planes
+	end
+	
+	-- Go through each plane in the fleet
+	for _, fleet_entry in ipairs(GAirline_fleet) do
+		local plane_index = fleet_entry[1]
+		local plane_count = fleet_entry[2]
+		
+		-- Get the plane details from availability list
+		local plane = S_airplaneAvailabilityList[plane_index]
+		
+		if plane then
+			-- Check if this plane's category is valid for the route
+			local is_valid_category = false
+			for _, cat in ipairs(valid_categories) do
+				if plane.planeCat == cat then
+					is_valid_category = true
+					break
+				end
+			end
+			
+			-- Check if the plane's range is sufficient
+			local has_sufficient_range = (plane.spec_range and plane.spec_range >= required_range)
+			
+			-- If plane meets both criteria, add it to eligible planes
+			if is_valid_category and has_sufficient_range then
+				table.insert(eligible_planes, {
+					plane = plane,
+					index = plane_index,
+					count = plane_count
+				})
+			end
+		end
+	end
+	
+	return eligible_planes
+end
+
+-- Function to assign a plane to a route
+function assign_plane_to_route(self, plane_data)
+	if not self.current_route then
+		print("Error: No current route")
+		return
+	end
+	
+	-- Create route entry for the airline's routes
+	local new_route = {
+		from = self.current_route.city1.location,
+		to = self.current_route.city2.location,
+		distance = self.current_route.distance,
+		plane_index = plane_data.index,
+		plane_name = plane_data.plane.planeName
+	}
+	
+	-- Initialize the routes table if it doesn't exist
+	if not GAirline_routes then
+		GAirline_routes = {}
+	end
+	
+	-- Add the new route to global routes
+	table.insert(GAirline_routes, new_route)
+	
+	-- Add route line to global route lines
+	if not GAirline_routelines then
+		GAirline_routelines = {}
+	end
+	
+	-- Store route line data
+	local route_line_data = {
+		pos1 = self.current_route.city1.location.pos,
+		pos2 = self.current_route.city2.location.pos
+	}
+	
+	table.insert(GAirline_routelines, route_line_data)
+	
+	-- Reduce plane count in fleet (assume at least 1 available)
+	for i, fleet_entry in ipairs(GAirline_fleet) do
+		if fleet_entry[1] == plane_data.index then
+			-- Reduce count by 1
+			fleet_entry[2] = fleet_entry[2] - 1
+			
+			-- If no planes of this type left, remove the entry
+			if fleet_entry[2] <= 0 then
+				table.remove(GAirline_fleet, i)
+			end
+			
+			break
+		end
+	end
+	
+	-- Show confirmation message
+	print("Route created: " .. self.current_route.city1.location.name .. " to " .. 
+		self.current_route.city2.location.name .. " using " .. plane_data.plane.planeName)
+	
+	-- Draw the new route line
+	draw_route_line(self, route_line_data.pos1, route_line_data.pos2)
+	
+	-- Close the popup
+	hide_route_popup(self)
+end
+
+-- Function to draw a single route line
+function draw_route_line(self, pos1, pos2)
+	-- Create line node (simplified - a real implementation would use proper line drawing)
+	local line = gui.new_box_node(
+		vmath.vector3((pos1[1] + pos2[1])/2, (pos1[2] + pos2[2])/2, 0.5),
+		vmath.vector3(math.sqrt((pos2[1]-pos1[1])^2 + (pos2[2]-pos1[2])^2), 3, 0)
+	)
+	
+	-- Calculate rotation angle based on vector from pos1 to pos2
+	local angle = math.atan2(pos2[2] - pos1[2], pos2[1] - pos1[1])
+	gui.set_rotation(line, vmath.quat_rotation_z(angle))
+	
+	-- Set line appearance
+	gui.set_color(line, vmath.vector4(0.8, 0.8, 0.2, 0.8))
+	
+	-- Add to list of route lines for cleanup
+	table.insert(self.route_lines, line)
+end
+
+-- Function to draw all route lines from global GAirline_routelines
+function update_route_lines(self)
+	-- Clear any existing route lines
+	if self.route_lines then
+		for _, line in ipairs(self.route_lines) do
+			gui.delete_node(line)
+		end
+		self.route_lines = {}
+	end
+	
+	-- If no route lines exist in global data, return
+	if not GAirline_routelines or #GAirline_routelines == 0 then
+		return
+	end
+	
+	-- Draw all routes from global data
+	for _, route_line_data in ipairs(GAirline_routelines) do
+		draw_route_line(self, route_line_data.pos1, route_line_data.pos2)
+	end
+end
+
+-- Function to show route popup
+function show_route_popup(self, city1, city2)
+	-- First ensure we don't have an existing popup
+	if self.popup_visible then
+		hide_route_popup(self)
+	end
+	
+	-- Calculate route information
+	local distance = calculate_distance(city1.location.pos, city2.location.pos)
+	local valid_categories = get_valid_plane_categories(city1.location.category, city2.location.category)
+	
+	-- Find eligible planes from fleet
+	local eligible_planes = get_eligible_fleet_planes(self, valid_categories, distance)
+	
+	-- Create container for popup
+	local screen_width = 1366  -- Adjust as needed
+	local screen_height = 768  -- Adjust as needed
+	local popup_width = 500
+	local popup_height = 400
+	
+	-- Create popup background
+	self.popup_container = gui.new_box_node(
+		vmath.vector3(screen_width/2, screen_height/2, 0.9),
+		vmath.vector3(popup_width, popup_height, 0)
+	)
+	gui.set_id(self.popup_container, "route_popup_container")
+	gui.set_color(self.popup_container, vmath.vector4(0.2, 0.2, 0.2, 0.9))
+	
+	-- Create popup title
+	self.popup_title = gui.new_text_node(
+		vmath.vector3(screen_width/2, screen_height/2 + popup_height/2 - 30, 0.95),
+		"Route: " .. city1.location.name .. " to " .. city2.location.name
+	)
+	gui.set_id(self.popup_title, "route_popup_title")
+	gui.set_font(self.popup_title, "system_font")
+	gui.set_color(self.popup_title, vmath.vector4(1, 1, 1, 1))
+	
+	-- Create distance text
+	self.popup_distance = gui.new_text_node(
+		vmath.vector3(screen_width/2, screen_height/2 + popup_height/2 - 70, 0.95),
+		"Distance: " .. string.format("%.0f", distance) .. " km"
+	)
+	gui.set_id(self.popup_distance, "route_popup_distance")
+	gui.set_font(self.popup_distance, "system_font")
+	gui.set_color(self.popup_distance, vmath.vector4(1, 1, 1, 1))
+	
+	-- Create airport categories text
+	self.popup_airports = gui.new_text_node(
+		vmath.vector3(screen_width/2, screen_height/2 + popup_height/2 - 110, 0.95),
+		"Airport Categories: " .. city1.location.name .. " (Cat " .. city1.location.category .. ") - " .. 
+		city2.location.name .. " (Cat " .. city2.location.category .. ")"
+	)
+	gui.set_id(self.popup_airports, "route_popup_airports")
+	gui.set_font(self.popup_airports, "system_font")
+	gui.set_color(self.popup_airports, vmath.vector4(1, 1, 1, 1))
+	
+	-- Create valid plane categories text
+	local categories_text = "Valid Plane Categories: "
+	if #valid_categories > 0 then
+		for i, cat in ipairs(valid_categories) do
+			categories_text = categories_text .. cat
+			if i < #valid_categories then
+				categories_text = categories_text .. ", "
+			end
+		end
+	else
+		categories_text = categories_text .. "None"
+	end
+	
+	self.popup_categories = gui.new_text_node(
+		vmath.vector3(screen_width/2, screen_height/2 + popup_height/2 - 150, 0.95),
+		categories_text
+	)
+	gui.set_id(self.popup_categories, "route_popup_categories")
+	gui.set_font(self.popup_categories, "system_font")
+	gui.set_color(self.popup_categories, vmath.vector4(1, 1, 1, 1))
+	
+	-- Create section title for available aircraft
+	self.popup_aircraft_title = gui.new_text_node(
+		vmath.vector3(screen_width/2, screen_height/2 + popup_height/2 - 200, 0.95),
+		"Available Aircraft for This Route:"
+	)
+	gui.set_id(self.popup_aircraft_title, "route_popup_aircraft_title")
+	gui.set_font(self.popup_aircraft_title, "system_font")
+	gui.set_color(self.popup_aircraft_title, vmath.vector4(1, 1, 1, 1))
+	
+	-- Create aircraft list section with buttons
+	self.popup_aircraft_nodes = {}
+	self.popup_plane_buttons = {}
+	
+	if #eligible_planes > 0 then
+		-- Create scrollable area for planes
+		local start_y = screen_height/2 + popup_height/2 - 240
+		local spacing = 40  -- Increased spacing for buttons
+		local button_width = 350
+		local button_height = 30
+		
+		for i, plane_data in ipairs(eligible_planes) do
+			local y_pos = start_y - (i-1) * spacing
+			
+			-- Create button background
+			local button = gui.new_box_node(
+				vmath.vector3(screen_width/2, y_pos, 0.95),
+				vmath.vector3(button_width, button_height, 0)
+			)
+			gui.set_id(button, "plane_button_" .. i)
+			gui.set_color(button, vmath.vector4(0.3, 0.3, 0.3, 1))
+			
+			-- Create button text
+			local button_text = gui.new_text_node(
+				vmath.vector3(screen_width/2, y_pos, 0.96),
+				plane_data.plane.planeName .. " (x" .. plane_data.count .. ")"
+			)
+			gui.set_id(button_text, "plane_button_text_" .. i)
+			gui.set_font(button_text, "system_font")
+			gui.set_color(button_text, vmath.vector4(1, 1, 1, 1))
+			
+			-- Store nodes for cleanup and hover/click detection
+			table.insert(self.popup_aircraft_nodes, button)
+			table.insert(self.popup_aircraft_nodes, button_text)
+			table.insert(self.popup_plane_buttons, {
+				node = button,
+				text_node = button_text,
+				plane_data = plane_data,
+				hover = false
+			})
+		end
+	else
+		-- No eligible planes message
+		self.popup_aircraft_list = gui.new_text_node(
+			vmath.vector3(screen_width/2, screen_height/2 + popup_height/2 - 240, 0.95),
+			"No suitable aircraft in your fleet for this route."
+		)
+		gui.set_id(self.popup_aircraft_list, "route_popup_aircraft_list")
+		gui.set_font(self.popup_aircraft_list, "system_font")
+		gui.set_color(self.popup_aircraft_list, vmath.vector4(0.8, 0.8, 0.8, 1))
+		
+		table.insert(self.popup_aircraft_nodes, self.popup_aircraft_list)
+	end
+	
+	-- Create close button
+	self.popup_close_button = gui.new_box_node(
+		vmath.vector3(screen_width/2, screen_height/2 - popup_height/2 + 40, 0.95),
+		vmath.vector3(120, 40, 0)
+	)
+	gui.set_id(self.popup_close_button, "route_popup_close_button")
+	gui.set_color(self.popup_close_button, vmath.vector4(0.8, 0.3, 0.3, 1))
+	
+	self.popup_close_text = gui.new_text_node(
+		vmath.vector3(screen_width/2, screen_height/2 - popup_height/2 + 40, 0.96),
+		"Close"
+	)
+	gui.set_id(self.popup_close_text, "route_popup_close_text")
+	gui.set_font(self.popup_close_text, "system_font")
+	gui.set_color(self.popup_close_text, vmath.vector4(1, 1, 1, 1))
+	
+	-- Store route data for later use
+	self.current_route = {
+		city1 = city1,
+		city2 = city2,
+		distance = distance,
+		valid_categories = valid_categories,
+		eligible_planes = eligible_planes
+	}
+	
+	-- Initialize button state
+	self.close_button_hover = false
+	
+	-- Set flag to indicate popup is visible
+	self.popup_visible = true
+end
+
+-- Function to hide route popup
+function hide_route_popup(self)
+	if not self.popup_visible then return end
+	
+	-- Delete all popup nodes
+	gui.delete_node(self.popup_container)
+	gui.delete_node(self.popup_title)
+	gui.delete_node(self.popup_distance)
+	gui.delete_node(self.popup_airports)
+	gui.delete_node(self.popup_categories)
+	gui.delete_node(self.popup_aircraft_title)
+	
+	-- Delete aircraft nodes
+	for _, node in ipairs(self.popup_aircraft_nodes) do
+		gui.delete_node(node)
+	end
+	
+	gui.delete_node(self.popup_close_button)
+	gui.delete_node(self.popup_close_text)
+	
+	-- Reset popup data
+	self.popup_container = nil
+	self.popup_title = nil
+	self.popup_distance = nil
+	self.popup_airports = nil
+	self.popup_categories = nil
+	self.popup_aircraft_title = nil
+	self.popup_aircraft_list = nil
+	self.popup_aircraft_nodes = {}
+	self.popup_plane_buttons = nil
+	self.popup_close_button = nil
+	self.popup_close_text = nil
+	self.close_button_hover = false
+	self.popup_visible = false
+	self.current_route = nil
+end
+
+function on_reload(self)
+	-- Add reload-handling code here
+	-- Learn more: https://defold.com/manuals/hot-reload/
+	-- Remove this function if not needed
+end

@@ -1,0 +1,167 @@
+local druid = require("druid.druid")
+
+function init(self)
+	self.druid = druid.new(self)
+	
+	self.button_return = gui.get_node("ReturnButton")
+	self.button_develop = gui.get_node("DevelopButton")
+
+	self.text_prodCostTitle = gui.get_node("ProductionCostTitle")
+	gui.set_text(self.text_prodCostTitle, G_UI_text.dev_prodCostTitle)
+	self.text_developButtonText = gui.get_node("DevelopButtonText")
+	gui.set_text(self.text_developButtonText, G_UI_text.dev_devButton)
+	self.text_returnButtonText = gui.get_node("ReturnButtonText")
+	gui.set_text(self.text_returnButtonText, G_UI_text.dev_returnButton)
+	self.text_devCostTitle = gui.get_node("DevCostTitle")
+	gui.set_text(self.text_devCostTitle, G_UI_text.dev_devCost)	
+	self.text_devTimeTitle = gui.get_node("TimeTitle")
+	gui.set_text(self.text_devTimeTitle, G_UI_text.dev_devTime)
+	
+	-- Create Druid buttons
+	self.druid:new_button("ReturnButton", function()
+		msg.post(".", "release_input_focus")
+		msg.post("ProxyCollection:/ProxyCalls", "run_design")
+	end)
+	
+	self.druid:new_button("DevelopButton", function()
+		-- Check if player has enough cash to develop the plane
+		if G_currentPlane.devCost > G_cashOnHand then
+			-- Show error message if not enough cash
+			msg.post("NamePopup", "show_popup", {
+				callback_url = msg.url(),
+				callback_message = "insufficient_funds",
+				title = "Insufficient Funds",
+				message = "You need " .. G_currentPlane.devCost/1000 .. G_UI_text.dev_devCostUnits .. " to develop this aircraft, but you only have " .. G_cashOnHand/1000 .. G_UI_text.dev_devCostUnits .. " available.",
+				placeholder = "",
+				confirm_text = "OK"
+			})
+		else
+			G_cashOnHand = G_cashOnHand - G_currentPlane.devCost
+			-- Open the naming popup if enough cash
+			msg.post("NamePopup", "show_popup", {
+				callback_url = msg.url(),
+				callback_message = "name_selected",
+				title = "Name Your Airplane",
+				message = "Please enter a name for your airplane:",
+				placeholder = "Enter name here",
+				confirm_text = "Confirm"
+			})
+		end
+	end)
+
+	-- Set the development time based on the plane size category
+	local devTime = 0
+	local devCost = 0
+	if G_currentPlane.planeCat == 1 then
+		devTime = 4*12
+		devCost = 2000  -- Small: $2 billion = 2,000 million
+	elseif G_currentPlane.planeCat == 2 then
+		devTime = 5*12
+		devCost = 4500  -- Medium: $4.5 billion = 4,500 million
+	elseif G_currentPlane.planeCat == 3 then
+		devTime = 6*12
+		devCost = 10000  -- Large narrow-body: $10 billion = 10,000 million
+	elseif G_currentPlane.planeCat == 4 then
+		devTime = 7*12
+		devCost = 20000  -- Wide-body mega: $20 billion = 20,000 million
+	elseif G_currentPlane.planeCat == 5 then
+		devTime = 8*12
+		devCost = 25000  -- Supersonic: $25 billion = 25,000 million
+	end
+
+-- temp for debugging
+	devTime = 5
+	devCost = 1000
+
+	G_currentPlane.devTime = devTime
+	G_currentPlane.devCost = devCost
+
+	-- Calculate production cost based on category, size, and engine configuration
+	local specs = require("LocFiles.Comp_Specs")
+	local baseCost = specs.planeCat[G_currentPlane.planeCat].prod_cost
+	
+	-- Size adjustment - scales from 0.8x to 1.2x based on planeSize (0.0 to 1.0)
+	local sizeMultiplier = 0.8 + (G_currentPlane.planeSize * 0.4)
+	
+	-- Engine configuration adjustment
+	local engineMultiplier = 0.9 + (G_currentPlane.engineConfig * 0.1)
+	
+	-- Calculate final production cost
+	local productionCost = baseCost * sizeMultiplier * engineMultiplier
+	
+	-- Round to two decimal places for cleaner display
+	productionCost = math.floor(productionCost * 100) / 100
+	
+	G_currentPlane.prodCost = productionCost
+	
+	-- dynamic text
+	self.text_prodCost = gui.get_node("UnitProductionCost")
+	self.text_salePriceTitle = gui.get_node("SalePriceTitle")
+	self.text_unitSalePrice = gui.get_node("UnitSalePriceText")
+	self.text_devCostText = gui.get_node("DevCostText")
+	self.text_devTimeToMarket = gui.get_node("TimeToMarket")
+	msg.post(".", "acquire_input_focus")
+	msg.post(".", "refresh_dev_text")
+	
+	self.druid:final()
+end
+
+function final(self)
+	self.druid:final()
+end
+
+function update(self, dt)
+	self.druid:update(dt)
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("refresh_dev_text") then
+		gui.set_text(self.text_prodCost, G_currentPlane.prodCost .. " " .. G_UI_text.dev_prodCostUnits)
+		gui.set_text(self.text_salePriceTitle, G_UI_text.dev_salePriceTitle .. G_currentPlane.markup*100 .. "%")
+		local salePrice = math.floor(G_currentPlane.prodCost * (1 + G_currentPlane.markup) * 100) / 100
+		G_currentPlane.salePrice = salePrice
+		gui.set_text(self.text_unitSalePrice, G_UI_text.dev_unitPrice .. salePrice .. " " .. G_UI_text.dev_prodCostUnits)
+		gui.set_text(self.text_devCostText, G_currentPlane.devCost/1000 .. G_UI_text.dev_devCostUnits)
+		gui.set_text(self.text_devTimeToMarket, G_currentPlane.devTime/12 .. G_UI_text.dev_prodTimeUnits)
+	elseif message_id == hash("name_selected") then
+		if message.name and message.name ~= "" then
+			-- Create a new plane object (clone of G_currentPlane)
+			-- Need to set the devTimeStart to the current time here
+			G_currentPlane.devTimeStart = G_gameTimer.totalSeconds
+			local newPlane = {}
+			for k, v in pairs(G_currentPlane) do
+				newPlane[k] = v
+			end
+			newPlane.planeName = message.name
+			newPlane.devTeam = G_teamId
+			
+			-- Add the new plane to the queue
+			table.insert(GDev_devQueue, newPlane)
+			print("Added '" .. message.name .. "' to development queue")
+			-- Release input focus and return to main
+			msg.post(".", "release_input_focus")
+			msg.post("ProxyCollection:/ProxyCalls", "run_main", {airplane_name = message.name})
+		else
+			-- If name is nil or empty, show an error message
+			msg.post("NamePopup:/go", "show_popup", {
+				callback_url = msg.url(),
+				callback_message = "name_selected",
+				title = "Error",
+				message = "Please enter a valid name for your airplane!",
+				placeholder = "Enter name here",
+				confirm_text = "Try Again"
+			})
+		end
+	elseif message_id == hash("insufficient_funds") then
+		-- Do nothing, just acknowledge the message
+		-- The popup will close automatically
+	end
+end
+
+function on_input(self, action_id, action)
+	return self.druid:on_input(action_id, action)
+end
+
+function on_reload(self)
+	self.druid:on_input_interrupt()
+end

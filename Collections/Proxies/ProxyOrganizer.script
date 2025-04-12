@@ -1,0 +1,459 @@
+-- Simluating server-side data
+
+-- Store all team's data here as a table
+S_teamData = {}
+
+S_gameTimer = {
+	totalSeconds = 0,
+	minutes = 0,
+	seconds = 0,
+	isRunning = false,
+	sessionDuration = 30 * 60, -- 30 minutes in seconds
+	timeScale = 1.0 -- Time scale factor (can be adjusted for game speed)
+}
+
+S_airplaneAvailabilityList = {}
+
+-- ------------------------------------------------------------
+-- All globals need to be placed here - in the Proxy Collection
+
+G_teamId = 1
+G_teamType = "prod" -- prod, airline
+G_UI_text = {} -- UI text is global for use on all screens
+
+-- Game timer globals
+G_gameTimer = {
+	totalSeconds = 0,
+	minutes = 0,
+	seconds = 0,
+	isRunning = false,
+	sessionDuration = 30 * 60, -- 30 minutes in seconds
+	timeScale = 1.0 -- Time scale factor (can be adjusted for game speed)
+}
+
+-- Cash on hand, in millions of dollars, starts at 2.5 billion
+G_cashOnHand = 2500
+
+G_currentPlane = {
+
+	planeName = "In Development",
+	devTeam = 0,
+	devTime = 0,
+	devTimeStart = 0,
+	devCost = 0,
+	prodCost = 0,
+	salePrice = 0,
+
+	planeType = 1,
+	planeCat = 1,
+	planeSize = 0.5,
+	planeConfig = 1,
+	fuelType = 1,
+	engineConfig = 1,
+	FuelSlider = 0.5,
+
+	spec_weight = 0,
+	spec_avgspeed = 0,
+	spec_topspeed = 0,
+	spec_range = 0,
+	spec_passCapacity = 0,
+	spec_cargoCapacity = 0,
+	spec_passEfficiency = 0,
+	spec_cargoEfficiency = 0,
+	spec_emissions = 0,
+	spec_fuel = 0,
+
+	markup = 0.1,
+}
+
+G_planeType_avail = {}
+G_planeCat_avail = {}
+G_planeConfig_avail = {}
+G_fuelType_avail = {}
+
+
+-- ------------------------------------------------------------
+-- Dev and Prod team globals
+
+GDev_devQueue = {}
+GDev_fleet = {}
+
+GAirline_fleet = {}
+GAirline_routes = {}
+GAirline_routelines = {}
+
+-- ------------------------------------------------------------
+-- 
+
+
+
+
+-- temp solution for language
+G_language = "EN" -- set language globally
+
+local componentLoc = {}
+local componentSpecs = {}
+
+function set_globals(teamId, teamType)
+	if (G_language=="PT") then
+		G_UI_text = require("LocFiles.UI_PT")
+		componentLoc = require("LocFiles.CompNames_PT")
+	elseif (G_language=="EN") then
+		G_UI_text = require("LocFiles.UI_EN")
+		componentLoc = require("LocFiles.CompNames_EN")
+	elseif (G_language=="ES") then
+		G_UI_text = require("LocFiles.UI_ES")
+		componentLoc = require("LocFiles.CompNames_ES")
+	end
+
+	componentSpecs = require("LocFiles.Comp_Specs")
+	
+
+	if teamType == "prod" then
+		-- Copy the arrays from componentSpecs, maintaining the table structure
+		for i, spec in ipairs(componentSpecs.planeType) do
+			G_planeType_avail[i] = {
+				name = spec.name,
+				avail = spec.avail,
+				weight = spec.weight,
+				cargo_factor = spec.cargo_factor,
+				base_speed = spec.base_speed,
+				base_range = spec.base_range,
+				base_emissions = spec.base_emissions,
+				base_consumption = spec.base_consumption
+			}
+		end
+		for i, spec in ipairs(componentSpecs.planeCat) do
+			G_planeCat_avail[i] = {
+				name = spec.name,
+				avail = spec.avail,
+				weight_low = spec.weight_low,
+				weight_mid = spec.weight_mid,
+				weight_high = spec.weight_high,
+				pass_low = spec.pass_low,
+				pass_mid = spec.pass_mid,
+				pass_high = spec.pass_high,
+				fuel_low = spec.fuel_low,
+				fuel_mid = spec.fuel_mid,
+				fuel_high = spec.fuel_high,
+				cargo_low = spec.cargo_low,
+				cargo_mid = spec.cargo_mid,
+				cargo_high = spec.cargo_high,
+				speed_factor = spec.speed_factor,
+				range_factor = spec.range_factor,
+				emissions_factor = spec.emissions_factor,
+				efficiency_factor = spec.efficiency_factor,
+				markup_start = spec.markup_start,
+			}
+		end
+		for i, spec in ipairs(componentSpecs.planeConfig) do
+			G_planeConfig_avail[i] = {
+				name = spec.name,
+				avail = spec.avail
+			}
+		end
+		for i, spec in ipairs(componentSpecs.fuelType) do
+			G_fuelType_avail[i] = {
+				name = spec.name,
+				avail = spec.avail,
+				energy_density = spec.energy_density,
+				range_efficiency = spec.range_efficiency,
+				emissions_factor = spec.emissions_factor,
+				consumption_efficiency = spec.consumption_efficiency
+			}
+		end
+
+		-- set initial specs
+		local tempcat = G_currentPlane.planeCat
+		G_currentPlane.spec_weight = G_planeCat_avail[tempcat].weight_mid
+		G_currentPlane.spec_passCapacity = G_planeCat_avail[tempcat].pass_mid
+		G_currentPlane.spec_cargoCapacity = G_planeCat_avail[tempcat].cargo_mid
+
+		-- Now add the localized names from componentLoc
+		for i, planeType in ipairs(componentLoc.planeType) do
+			G_planeType_avail[i].name = planeType 
+		end
+		
+		for i, planeCat in ipairs(componentLoc.planeCat) do
+			G_planeCat_avail[i].name = planeCat
+		end
+		
+		for i, planeConfig in ipairs(componentLoc.planeConfig) do
+			G_planeConfig_avail[i].name = planeConfig
+		end
+		
+		for i, fuelType in ipairs(componentLoc.fuelType) do
+			G_fuelType_avail[i].name = fuelType 
+		end
+	end
+end
+
+
+-- ------------------------------------------------------------
+-- Server simulation functions
+
+function swap_team(teamId, teamType)
+	if G_teamId == teamId then return end
+	
+	-- store current team data
+	if not S_teamData[G_teamId] then
+		S_teamData[G_teamId] = {}
+	end
+	
+	print("Swapping team to " .. teamId)
+	S_teamData[G_teamId].currentPlane = G_currentPlane
+	S_teamData[G_teamId].cashOnHand = G_cashOnHand
+
+	print("teamType: " .. teamType)
+
+	S_teamData[G_teamId].planeType_avail = G_planeType_avail
+	S_teamData[G_teamId].planeCat_avail = G_planeCat_avail
+	S_teamData[G_teamId].planeConfig_avail = G_planeConfig_avail
+	S_teamData[G_teamId].fuelType_avail = G_fuelType_avail
+
+	--[[
+	if GAirline_routes[1] then
+		print("Route 1: " .. GAirline_routes[1].distance)
+	end
+	if GDev_fleet[1] then
+		print("Fleet 1: " .. GDev_fleet[1].planeName)
+	end
+	--]]
+
+	if teamType == "prod" then
+		S_teamData[G_teamId].devQueue = GDev_devQueue
+		S_teamData[G_teamId].fleet = GDev_fleet
+	elseif teamType == "airline" then
+		S_teamData[G_teamId].airfleet = GAirline_fleet
+		S_teamData[G_teamId].routes = GAirline_routes
+		S_teamData[G_teamId].routelines = GAirline_routelines
+		print("here")
+	end
+	
+	-- Update team ID
+	G_teamId = teamId
+	G_teamType = teamType
+	
+	-- Load the new team's data
+	if S_teamData[teamId] then
+		G_currentPlane = S_teamData[teamId].currentPlane or {}
+		G_cashOnHand = S_teamData[teamId].cashOnHand or 2500
+		G_planeType_avail = S_teamData[teamId].planeType_avail or {}
+		G_planeCat_avail = S_teamData[teamId].planeCat_avail or {}
+		G_planeConfig_avail = S_teamData[teamId].planeConfig_avail or {}
+		G_fuelType_avail = S_teamData[teamId].fuelType_avail or {}
+		if teamType == "prod" then
+			GDev_devQueue = S_teamData[teamId].devQueue or {}
+			GDev_fleet = S_teamData[teamId].fleet or {}
+		elseif teamType == "airline" then
+			print("teamId: " .. teamId)
+			GAirline_fleet = S_teamData[teamId].airfleet or {}
+			GAirline_routes = S_teamData[teamId].routes or {}
+			GAirline_routelines = S_teamData[teamId].routelines or {}
+		end
+	else
+		-- Initialize new team with default values
+		set_globals(teamId, teamType)
+		G_currentPlane = {
+			planeName = "In Development",
+			devTime = 0,
+			devTimeStart = 0,
+			devCost = 0,
+			prodCost = 0,
+			salePrice = 0,
+			planeType = 1,
+			planeCat = 1,
+			planeSize = 0.5,
+			planeConfig = 1,
+			fuelType = 1,
+			engineConfig = 1,
+			FuelSlider = 0.5,
+			spec_weight = 0,
+			spec_avgspeed = 0,
+			spec_topspeed = 0,
+			spec_range = 0,
+			spec_passCapacity = 0,
+			spec_cargoCapacity = 0,
+			spec_passEfficiency = 0,
+			spec_cargoEfficiency = 0,
+			spec_emissions = 0,
+			spec_fuel = 0,
+			markup = 0.1,
+		}
+		G_cashOnHand = 2500
+		GDev_devQueue = {}
+		GDev_fleet = {}
+	end
+
+	--[[
+	if GAirline_routes[1] then
+		print("Route 1: " .. GAirline_routes[1].distance)
+	end
+	if GDev_fleet[1] then
+		print("Fleet 1: " .. GDev_fleet[1].planeName)
+	end
+	--]]
+
+	if teamType == "prod" then
+		msg.post(".", "run_main")
+	elseif teamType == "airline" then
+		msg.post(".", "run_airline")
+	end
+end
+
+
+-- ------------------------------------------------------------
+-- Proxy functions
+
+function init(self)
+	-- Initialize and start the game timer
+	G_gameTimer.totalSeconds = 0
+	G_gameTimer.minutes = 0
+	G_gameTimer.seconds = 0
+	G_gameTimer.isRunning = true
+
+	set_globals(G_teamId, G_teamType)
+
+	msg.post(".", "acquire_input_focus")
+	self.current_proxy = nil
+	msg.post("#", "run_language")
+end
+
+local function show(self, proxy)
+	if self.current_proxy then
+		msg.post(self.current_proxy, "unload")
+		self.current_proxy = nil
+	end
+	msg.post(proxy, "async_load")
+end
+
+function final(self)
+	-- Add finalization code here
+	-- Learn more: https://defold.com/manuals/script/
+	-- Remove this function if not needed
+end
+
+function update(self, dt)
+	-- Update the game timer if it's running
+	if G_gameTimer.isRunning then
+		-- Apply time scale to dt
+		local scaledDt = dt * G_gameTimer.timeScale
+		
+		-- Update total seconds
+		G_gameTimer.totalSeconds = G_gameTimer.totalSeconds + scaledDt
+		
+		-- Calculate minutes and seconds
+		G_gameTimer.minutes = math.floor(G_gameTimer.totalSeconds / 60)
+		G_gameTimer.seconds = math.floor(G_gameTimer.totalSeconds % 60)
+		
+		-- Check if session time is up
+		if G_gameTimer.totalSeconds >= G_gameTimer.sessionDuration then
+			G_gameTimer.isRunning = false
+			-- Notify that time is up
+			-- CKTODO: Put in something else here later
+--			msg.post("HUDinfo", "time_up")
+		end
+	end
+
+	-- Check for completed planes in development queue
+	if GDev_devQueue then
+		local current_time = G_gameTimer.totalSeconds
+		local planes_to_remove = {}
+		
+		-- Check for completed planes
+		for i, plane in ipairs(GDev_devQueue) do
+			-- Calculate progress
+			local elapsed_time = current_time - plane.devTimeStart
+			if elapsed_time < 0 then elapsed_time = 0 end
+			local progress = math.min(elapsed_time / plane.devTime, 1.0)
+			
+			-- Check if plane development is complete
+			if progress >= 1.0 then
+				-- Add to removal list
+				table.insert(planes_to_remove, i)
+				
+				-- Add plane to fleet
+				if not GDev_fleet then GDev_fleet = {} end
+				table.insert(GDev_fleet, plane)
+
+				print("plane.name: " .. plane.planeName)
+				print("GDev_fleet[1].name: " .. GDev_fleet[1].planeName)
+				
+				-- Add plane to availability list
+				--if not S_airplaneAvailabilityList then S_airplaneAvailabilityList = {} end
+				table.insert(S_airplaneAvailabilityList, plane)
+
+				print("S_airplaneAvailabilityList[1].name: " .. S_airplaneAvailabilityList[1].planeName)
+
+				-- Notify the player that a plane is complete
+				print("Plane completed: " .. plane.planeName)
+				-- You might want to add a more visible notification here
+			end
+		end
+		
+		-- Remove completed planes from the queue (in reverse order to avoid index issues)
+		for i = #planes_to_remove, 1, -1 do
+			local plane = GDev_devQueue[planes_to_remove[i]]
+
+			-- Send notification message to the global notification system
+			msg.post("NotificationBox", "show_notification", {
+				title = "Plane Completed",
+				message = plane.planeName .. " complete",
+				duration = 5  -- Show for 5 seconds
+			})
+			
+			-- Remove the plane from the queue
+			table.remove(GDev_devQueue, planes_to_remove[i])
+		end
+	end
+
+end
+
+function fixed_update(self, dt)
+	-- This function is called if 'Fixed Update Frequency' is enabled in the Engine section of game.project
+	-- Can be coupled with fixed updates of the physics simulation if 'Use Fixed Timestep' is enabled in
+	-- Physics section of game.project
+	-- Add update code here
+	-- Learn more: https://defold.com/manuals/script/
+	-- Remove this function if not needed
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("run_main") then
+		show(self, "#MainScreenProxy")
+	elseif message_id == hash("run_airline") then
+		show(self, "#AirlineScreenProxy")
+	elseif message_id == hash("run_purchase") then
+		show(self, "#PurchaseScreenProxy")
+	elseif message_id == hash("run_map") then
+		show(self, "#MapScreenProxy")
+	elseif message_id == hash("swap_team") then
+		swap_team(message.teamId, message.teamType)
+	elseif message_id == hash("run_design") then
+		show(self, "#3DDesignProxy")
+	elseif message_id == hash("deposit_money") then
+		S_teamData[message.seller].cashOnHand = S_teamData[message.seller].cashOnHand + message.amount
+		print("Deposited money: " .. message.amount)
+		print("New cash on hand: " .. S_teamData[message.seller].cashOnHand)
+	elseif message_id == hash("run_language") then
+		show(self, "#LanguageProxy")
+	elseif message_id == hash("run_dev") then
+		show(self, "#DevProxy")
+	elseif message_id == hash("proxy_loaded") then
+		self.current_proxy = sender
+		msg.post(sender, "enable")
+	elseif message_id == hash("proxy_unloaded") then
+		print("Unloaded", sender)
+	end
+end
+
+function on_input(self, action_id, action)
+	-- No notification handling here anymore
+	return false
+end
+
+function on_reload(self)
+	-- Add reload-handling code here
+	-- Learn more: https://defold.com/manuals/hot-reload/
+	-- Remove this function if not needed
+end

@@ -1,0 +1,51 @@
+
+
+function init(self)
+			-- This is temporary code - to remove with language select is implemented
+			print("Language selected ",G_language)
+			msg.post("ProxyCollection:/ProxyCalls", "run_main")
+end
+
+function final(self)
+	-- Add finalization code here
+	-- Learn more: https://defold.com/manuals/script/
+	-- Remove this function if not needed
+end
+
+function update(self, dt)
+	-- Add update code here
+	-- Learn more: https://defold.com/manuals/script/
+	-- Remove this function if not needed
+end
+
+function on_message(self, message_id, message, sender)
+	-- Add message-handling code here
+	-- Learn more: https://defold.com/manuals/message-passing/
+	-- Remove this function if not needed
+end
+
+-- leaving this here for the future
+
+function on_input(self, action_id, action)
+--[[	
+    if action_id == hash("touch") and action.pressed then  -- "touch" works for both mouse and touch
+		if gui.pick_node(self.button1, action.x, action.y) then
+			G_language = "EN"
+			msg.post("Proxies:/ProxyCalls", "run_main")		
+		elseif gui.pick_node(self.button2, action.x, action.y) then
+			G_language = "PT"
+			msg.post("Proxies:/ProxyCalls", "run_main")		
+		elseif gui.pick_node(self.button3, action.x, action.y) then
+			G_language = "ES"
+			msg.post("Proxies:/ProxyCalls", "run_main")		
+        end
+    end
+]]--
+end
+
+
+function on_reload(self)
+	-- Add reload-handling code here
+	-- Learn more: https://defold.com/manuals/hot-reload/
+	-- Remove this function if not needed
+end

@@ -1,0 +1,4 @@
+images {
+  image: "/Assets/Images/airback2.png"
+}
+extrude_borders: 2

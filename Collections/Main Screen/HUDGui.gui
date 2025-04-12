@@ -1,0 +1,237 @@
+script: "/Collections/Main Screen/HUDGui.gui_script"
+fonts {
+  name: "Roboto-Regular"
+  font: "/Fonts/Roboto-Regular.font"
+}
+fonts {
+  name: "Roboto-Bold"
+  font: "/Fonts/Roboto-Bold.font"
+}
+textures {
+  name: "druid_example"
+  texture: "/example/assets/druid_example.atlas"
+}
+nodes {
+  position {
+    x: 977.0
+    y: 607.0
+  }
+  size {
+    x: 500.0
+    y: 250.0
+  }
+  color {
+    x: 0.6
+    y: 0.4
+    z: 0.0
+  }
+  type: TYPE_BOX
+  id: "bg1"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+}
+nodes {
+  position {
+    x: 977.0
+    y: 247.0
+  }
+  size {
+    x: 500.0
+    y: 450.0
+  }
+  color {
+    x: 0.0
+    y: 0.502
+    z: 0.502
+  }
+  type: TYPE_BOX
+  id: "bg2"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+}
+nodes {
+  position {
+    x: 980.0
+    y: 658.0
+  }
+  size {
+    x: 200.0
+    y: 60.0
+  }
+  type: TYPE_TEXT
+  text: "<text>"
+  font: "Roboto-Regular"
+  id: "CashText"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 858.0
+    y: 557.0
+  }
+  size {
+    x: 200.0
+    y: 50.0
+  }
+  type: TYPE_BOX
+  texture: "druid_example/rect_round2_width1"
+  id: "InvestmentButton"
+  inherit_alpha: true
+  slice9 {
+    x: 4.0
+    y: 4.0
+    z: 4.0
+    w: 4.0
+  }
+}
+nodes {
+  size {
+    x: 200.0
+    y: 50.0
+  }
+  type: TYPE_TEXT
+  text: "<text>"
+  font: "Roboto-Bold"
+  id: "InvestmentButtonText"
+  parent: "InvestmentButton"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 1106.0
+    y: 557.0
+  }
+  size {
+    x: 200.0
+    y: 50.0
+  }
+  type: TYPE_BOX
+  texture: "druid_example/rect_round2_width1"
+  id: "LoanButton"
+  inherit_alpha: true
+  slice9 {
+    x: 4.0
+    y: 4.0
+    z: 4.0
+    w: 4.0
+  }
+}
+nodes {
+  size {
+    x: 200.0
+    y: 50.0
+  }
+  type: TYPE_TEXT
+  text: "<text>"
+  font: "Roboto-Bold"
+  id: "LoanButtonText"
+  parent: "LoanButton"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 980.0
+    y: 408.0
+  }
+  size {
+    x: 200.0
+    y: 60.0
+  }
+  type: TYPE_TEXT
+  text: "<text>"
+  font: "Roboto-Regular"
+  id: "PlanesDevText"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 980.0
+    y: 616.0
+  }
+  size {
+    x: 200.0
+    y: 60.0
+  }
+  type: TYPE_TEXT
+  text: "<text>"
+  font: "Roboto-Regular"
+  id: "DebtText"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 862.0
+    y: 308.0
+  }
+  size {
+    x: 200.0
+    y: 50.0
+  }
+  type: TYPE_TEXT
+  text: "<text>"
+  font: "Roboto-Regular"
+  id: "DevQueue"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 598.0
+    y: 707.0
+  }
+  size {
+    x: 200.0
+    y: 60.0
+  }
+  type: TYPE_TEXT
+  text: "00:00"
+  font: "Roboto-Bold"
+  id: "TimerText"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 598.0
+    y: 737.0
+  }
+  size {
+    x: 200.0
+    y: 30.0
+  }
+  type: TYPE_TEXT
+  text: "Time Remaining"
+  font: "Roboto-Regular"
+  id: "TimerLabel"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 598.0
+    y: 657.0
+  }
+  size {
+    x: 200.0
+    y: 60.0
+  }
+  type: TYPE_TEXT
+  text: "Year 0"
+  font: "Roboto-Bold"
+  id: "YearText"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 598.0
+    y: 687.0
+  }
+  size {
+    x: 200.0
+    y: 30.0
+  }
+  type: TYPE_TEXT
+  text: "Game Year"
+  font: "Roboto-Regular"
+  id: "YearLabel"
+  inherit_alpha: true
+}
+material: "/builtins/materials/gui.material"
+adjust_reference: ADJUST_REFERENCE_PARENT

@@ -1,0 +1,56 @@
+local druid = require("druid.druid")
+
+function init(self)
+	self.druid = druid.new(self)
+	
+	self.button_purchase = gui.get_node("PurchaseButton")
+	self.button_map = gui.get_node("MapButton")
+	self.button_fleet = gui.get_node("FleetButton")
+	self.text_purchaseButton = gui.get_node("PurchaseButtonText")
+	self.text_mapButton = gui.get_node("MapButtonText")
+	self.text_fleetButton = gui.get_node("FleetButtonText")
+	
+	-- Create Druid buttons
+	self.druid:new_button("PurchaseButton", function()
+		msg.post(".", "release_input_focus")
+		msg.post("ProxyCollection:/ProxyCalls", "run_purchase")
+	end)
+	
+	self.druid:new_button("MapButton", function()
+		msg.post(".", "release_input_focus")
+		msg.post("ProxyCollection:/ProxyCalls", "run_map")
+	end)
+	
+	self.druid:new_button("FleetButton", function()
+		msg.post(".", "release_input_focus")
+		msg.post("ProxyCollection:/ProxyCalls", "run_fleet")
+	end)
+	
+	msg.post(".", "acquire_input_focus")
+	
+	self.druid:final()
+end
+
+function final(self)
+	self.druid:final()
+end
+
+function update(self, dt)
+	self.druid:update(dt)
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("set_buttons_text") then
+		gui.set_text(self.text_purchaseButton,G_UI_text.purchaseButtonText)
+		gui.set_text(self.text_mapButton,G_UI_text.mapButtonText)
+		gui.set_text(self.text_fleetButton,G_UI_text.fleetButtonText)
+	end
+end
+
+function on_input(self, action_id, action)
+	return self.druid:on_input(action_id, action)
+end
+
+function on_reload(self)
+	self.druid:on_input_interrupt()
+end

@@ -1,0 +1,64 @@
+local druid = require("druid.druid")
+
+function init(self)
+	self.druid = druid.new(self)
+	
+	-- Store the text nodes for later use
+	self.text_designButton = gui.get_node("DesignButtonText")
+	self.text_techtreeButton = gui.get_node("TechTreeButtonText")
+	self.text_networkButton = gui.get_node("NetworkButtonText")
+	self.text_fleetButton = gui.get_node("FleetButtonText")
+	
+	-- Create Druid buttons
+	self.druid:new_button("DesignButton", function()
+		msg.post(".", "release_input_focus")
+		msg.post("ProxyCollection:/ProxyCalls", "run_design")
+	end)
+	
+	self.druid:new_button("TechTreeButton", function()
+		msg.post(".", "release_input_focus")
+		msg.post("ProxyCollection:/ProxyCalls", "run_techtree")
+	end)
+	
+	self.druid:new_button("NetworkButton", function()
+		msg.post(".", "release_input_focus")
+		msg.post("ProxyCollection:/ProxyCalls", "run_network")
+	end)
+	
+	self.druid:new_button("FleetButton", function()
+		msg.post(".", "release_input_focus")
+		msg.post("ProxyCollection:/ProxyCalls", "run_fleet")
+	end)
+	
+	gui.set_enabled(self.text_designButton, true)	
+	msg.post(".", "acquire_input_focus")
+	
+	self.druid:final()
+end
+
+function final(self)
+	self.druid:final()
+end
+
+function update(self, dt)
+	self.druid:update(dt)
+end
+
+function on_message(self, message_id, message, sender)
+	self.druid:on_message(message_id, message, sender)
+	
+	if message_id == hash("set_buttons_text") then
+		gui.set_text(self.text_designButton, G_UI_text.designButtonText)
+		gui.set_text(self.text_techtreeButton, G_UI_text.techtreeButtonText)
+		gui.set_text(self.text_networkButton, G_UI_text.networkButtonText)
+		gui.set_text(self.text_fleetButton, G_UI_text.fleetButtonText)
+	end
+end
+
+function on_input(self, action_id, action)
+	return self.druid:on_input(action_id, action)
+end
+
+function on_reload(self)
+	self.druid:on_input_interrupt()
+end

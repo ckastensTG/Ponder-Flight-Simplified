@@ -1,0 +1,241 @@
+local druid = require("druid.druid")
+
+function init(self)
+	self.druid = druid.new(self)
+	
+	self.text_cash = gui.get_node("CashText")
+	self.text_debt = gui.get_node("DebtText")
+	self.text_planesdev = gui.get_node("PlanesDevText")
+	self.text_investment = gui.get_node("InvestmentButtonText")
+	self.text_loan = gui.get_node("LoanButtonText")	
+	self.text_devqueue = gui.get_node("DevQueue")
+	
+	-- Get timer nodes
+	self.text_timer = gui.get_node("TimerText")
+	self.text_timer_label = gui.get_node("TimerLabel")
+	
+	-- Get year display node
+	self.text_year = gui.get_node("YearText")
+	self.text_year_label = gui.get_node("YearLabel")
+	
+	-- Create Druid buttons
+	self.druid:new_button("InvestmentButton", function()
+		-- Add your investment button action here
+		print("Investment button pressed")
+	end)
+	
+	self.druid:new_button("LoanButton", function()
+		-- Add your loan button action here
+		print("Loan button pressed")
+	end)
+	
+	msg.post(".", "acquire_input_focus")
+	msg.post(".","set_buttons_text", {value = true})
+
+	-- Initialize timer variables
+	self.timer_initialized = false
+	
+	-- Initialize year variables
+	self.seconds_per_year = 12 -- 1 year passes every 12 seconds
+	self.max_year = 150 -- Game ends at year 150
+	
+	-- Initialize progress bar settings
+	self.progress_bar_width = 200 -- Adjust based on your UI layout
+	self.progress_bar_height = 10
+	self.progress_bar_spacing = 5
+	self.text_line_height = 20 -- Adjust based on your font size
+	
+	-- Keep track of progress bar nodes
+	self.progress_bars = {}
+	
+	self.druid:final()
+end
+
+function final(self)
+	self.druid:final()
+end
+
+function update_timer_display(self)
+	-- Calculate remaining time
+	local totalRemainingSeconds = G_gameTimer.sessionDuration - G_gameTimer.totalSeconds
+	if totalRemainingSeconds < 0 then totalRemainingSeconds = 0 end
+	
+	local remainingMinutes = math.floor(totalRemainingSeconds / 60)
+	local remainingSeconds = math.floor(totalRemainingSeconds % 60)
+	
+	-- Format and display the time
+	local timeString = string.format("%02d:%02d", remainingMinutes, remainingSeconds)
+	gui.set_text(self.text_timer, timeString)
+	
+	-- Update the game year based on elapsed time
+	local elapsedSeconds = G_gameTimer.totalSeconds
+	local currentYear = math.floor(elapsedSeconds / self.seconds_per_year)
+	if currentYear > self.max_year then currentYear = self.max_year end
+	
+	-- Display the year
+	gui.set_text(self.text_year, "Year " .. currentYear)
+
+	-- Update cash text
+	gui.set_text(self.text_cash,G_UI_text.cashText .. string.format("%.1f", G_cashOnHand/1000) .. " " .. G_UI_text.dev_devCostUnits)
+end
+
+function on_message(self, message_id, message, sender)
+	self.druid:on_message(message_id, message, sender)
+	
+	if message_id == hash("set_buttons_text") then
+		gui.set_text(self.text_cash,G_UI_text.cashText .. string.format("%.1f", G_cashOnHand/1000) .. " " .. G_UI_text.dev_devCostUnits)
+		gui.set_text(self.text_debt,G_UI_text.debtText .. "0")
+		gui.set_text(self.text_planesdev,G_UI_text.planesdevText)
+		gui.set_text(self.text_investment,G_UI_text.investmentText)
+		gui.set_text(self.text_loan,G_UI_text.loanText)
+	elseif message_id == hash("init_timer") then
+		-- Initialize the timer display
+		self.timer_initialized = true
+		gui.set_text(self.text_timer_label, "Time Remaining")
+		gui.set_text(self.text_year_label, "Game Year")
+		gui.set_text(self.text_year, "Year 0")
+		update_timer_display(self)
+		print("Timer initialized")
+	elseif message_id == hash("update_timer") then
+		-- Update the timer display
+		update_timer_display(self)
+	elseif message_id == hash("time_up") then
+		-- Handle time up event
+		gui.set_text(self.text_timer, "00:00")
+		gui.set_text(self.text_timer_label, "Time's Up!")
+		gui.set_text(self.text_year, "Year " .. self.max_year)
+		print("Time's up!")
+	end
+end
+
+function get_dev_stage(progress)
+	if progress < 0.2 then
+		return "Prototyping"
+	elseif progress < 0.6 then
+		return "Testing"
+	elseif progress < 0.8 then
+		return "Certification & Setup"
+	else
+		return "Production & Integration"
+	end
+end
+
+function update(self, dt)
+	self.druid:update(dt)
+	
+	-- Update timer display if initialized
+	if self.timer_initialized and G_gameTimer.isRunning then
+		update_timer_display(self)
+	end
+
+	-- Display all names from GDev_devQueue in the DevQueue text field
+	if GDev_devQueue then
+		local queue_text = ""
+		local current_time = G_gameTimer.totalSeconds
+		local planes_to_display = {}
+		
+		-- Build display list of planes in development
+		for i, plane in ipairs(GDev_devQueue) do
+			-- Calculate progress
+			local elapsed_time = current_time - plane.devTimeStart
+			if elapsed_time < 0 then elapsed_time = 0 end
+			local progress = math.min(elapsed_time / plane.devTime, 1.0)
+			
+			local stage = get_dev_stage(progress)
+			local percent = math.floor(progress * 100)
+			
+			table.insert(planes_to_display, {
+				name = plane.planeName,
+				progress = progress,
+				percent = percent,
+				stage = stage,
+				plane = plane -- Store reference to original plane
+			})
+		end
+		
+		-- Build the text from the display list
+		for i, plane_info in ipairs(planes_to_display) do
+			-- Add to text
+			queue_text = queue_text .. plane_info.name .. "\n"
+			queue_text = queue_text .. "[" .. plane_info.percent .. "%] " .. plane_info.stage
+			
+			-- Add separator between planes
+			if i < #planes_to_display then
+				queue_text = queue_text .. "\n\n"
+			end
+		end
+		
+		-- Update the text
+		gui.set_text(self.text_devqueue, queue_text)
+		
+		-- Clean up old progress bars
+		for _, node in ipairs(self.progress_bars or {}) do
+			gui.delete_node(node)
+		end
+		self.progress_bars = {}
+		
+		-- If no planes left in queue, show a message
+		if #planes_to_display == 0 then
+			gui.set_text(self.text_devqueue, "No planes in development")
+			return
+		end
+		
+		-- Get text metrics for positioning
+		local text_metrics = gui.get_text_metrics_from_node(self.text_devqueue)
+		local base_y = gui.get_position(self.text_devqueue).y + text_metrics.height/2 -- Start from top
+		local base_x = gui.get_position(self.text_devqueue).x
+		
+		-- Create progress bars
+		-- We'll work from the top down
+		local current_y = base_y
+		
+		-- Add an initial offset to better align with text
+		current_y = current_y - self.text_line_height * 0.7
+		
+		-- Use planes_to_display for progress bars
+		for i, plane_info in ipairs(planes_to_display) do
+			-- Position calculation - move down for each plane
+			-- First line is the plane name, move down past it
+			current_y = current_y - self.text_line_height * 1.2
+			
+			-- Create background bar
+			local bg_bar = gui.new_box_node(vmath.vector3(base_x, current_y, 0), vmath.vector3(self.progress_bar_width, self.progress_bar_height, 0))
+			gui.set_id(bg_bar, "progress_bar_bg_" .. i)
+			gui.set_color(bg_bar, vmath.vector4(0.2, 0.2, 0.2, 1))
+			table.insert(self.progress_bars, bg_bar)
+			
+			-- Create progress bar
+			local progress_width = self.progress_bar_width * plane_info.progress
+			local progress_bar = gui.new_box_node(vmath.vector3(base_x - (self.progress_bar_width - progress_width)/2, current_y, 0.1), vmath.vector3(progress_width, self.progress_bar_height, 0))
+			gui.set_id(progress_bar, "progress_bar_fill_" .. i)
+			table.insert(self.progress_bars, progress_bar)
+			
+			-- Set color based on stage
+			if plane_info.progress < 0.2 then
+				gui.set_color(progress_bar, vmath.vector4(0.2, 0.6, 1.0, 1)) -- Blue for prototyping
+			elseif plane_info.progress < 0.6 then
+				gui.set_color(progress_bar, vmath.vector4(1.0, 0.8, 0.2, 1)) -- Yellow for testing
+			elseif plane_info.progress < 0.8 then
+				gui.set_color(progress_bar, vmath.vector4(1.0, 0.5, 0.0, 1)) -- Orange for certification
+			else
+				gui.set_color(progress_bar, vmath.vector4(0.2, 0.8, 0.2, 1)) -- Green for production
+			end
+			
+			-- Move down to the progress text line
+			current_y = current_y - self.text_line_height * 1.0
+			
+			-- Add extra space after each plane except the last one
+			if i < #planes_to_display then
+				current_y = current_y - self.text_line_height * 0.8
+			end
+		end
+	end
+end
+
+function on_input(self, action_id, action)
+	return self.druid:on_input(action_id, action)
+end
+
+function on_reload(self)
+	self.druid:on_input_interrupt()
+end

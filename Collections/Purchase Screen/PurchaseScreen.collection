@@ -1,0 +1,78 @@
+name: "PurchaseScreen"
+scale_along_z: 0
+embedded_instances {
+  id: "PlanePanelContainer1"
+  data: "components {\n"
+  "  id: \"PlanePanel\"\n"
+  "  component: \"/Collections/Purchase Screen/PlanePanel1.gui\"\n"
+  "}\n"
+  ""
+}
+embedded_instances {
+  id: "PurchaseScreenScriptContainer"
+  data: "components {\n"
+  "  id: \"PurchaseScreenScript\"\n"
+  "  component: \"/Collections/Purchase Screen/PurchaseScreenScript.script\"\n"
+  "}\n"
+  ""
+}
+embedded_instances {
+  id: "PlanePanelContainer2"
+  data: "components {\n"
+  "  id: \"PlanePanel2\"\n"
+  "  component: \"/Collections/Purchase Screen/PlanePanel2.gui\"\n"
+  "}\n"
+  "components {\n"
+  "  id: \"ReturnAirlineButton\"\n"
+  "  component: \"/Collections/Purchase Screen/ReturnAirlineButton.gui\"\n"
+  "}\n"
+  "components {\n"
+  "  id: \"UnitSlider\"\n"
+  "  component: \"/Collections/Purchase Screen/UnitSlider.gui\"\n"
+  "}\n"
+  ""
+}
+embedded_instances {
+  id: "ZZ_BGContainer"
+  data: "embedded_components {\n"
+  "  id: \"sprite\"\n"
+  "  type: \"sprite\"\n"
+  "  data: \"default_animation: \\\"airback2\\\"\\n"
+  "material: \\\"/builtins/materials/sprite.material\\\"\\n"
+  "size {\\n"
+  "  x: 626.0\\n"
+  "  y: 470.0\\n"
+  "}\\n"
+  "textures {\\n"
+  "  sampler: \\\"texture_sampler\\\"\\n"
+  "  texture: \\\"/Assets/Altases/bg_atlas.atlas\\\"\\n"
+  "}\\n"
+  "\"\n"
+  "  position {\n"
+  "    y: 1.8\n"
+  "    z: -2.0\n"
+  "  }\n"
+  "  scale {\n"
+  "    x: 0.037\n"
+  "    y: 0.037\n"
+  "  }\n"
+  "}\n"
+  ""
+}
+embedded_instances {
+  id: "camera"
+  data: "embedded_components {\n"
+  "  id: \"camera\"\n"
+  "  type: \"camera\"\n"
+  "  data: \"aspect_ratio: 1.0\\n"
+  "fov: 0.7854\\n"
+  "near_z: 0.1\\n"
+  "far_z: 1000.0\\n"
+  "auto_aspect_ratio: 1\\n"
+  "\"\n"
+  "}\n"
+  ""
+  position {
+    z: 10.0
+  }
+}

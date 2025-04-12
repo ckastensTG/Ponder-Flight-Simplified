@@ -1,0 +1,164 @@
+script: "/Collections/Airline Screen/AirlineActionButtons.gui_script"
+fonts {
+  name: "Roboto-Regular"
+  font: "/Fonts/Roboto-Regular.font"
+}
+fonts {
+  name: "Roboto-Bold"
+  font: "/Fonts/Roboto-Bold.font"
+}
+textures {
+  name: "druid_example"
+  texture: "/example/assets/druid_example.atlas"
+}
+nodes {
+  position {
+    x: 332.0
+    y: 322.0
+  }
+  size {
+    x: 250.0
+    y: 600.0
+  }
+  color {
+    x: 0.0
+    y: 0.2
+    z: 0.0
+  }
+  type: TYPE_BOX
+  id: "background"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+}
+nodes {
+  position {
+    x: 335.0
+    y: 526.0
+  }
+  size {
+    x: 200.0
+    y: 75.0
+  }
+  type: TYPE_BOX
+  texture: "druid_example/rect_round2_width1"
+  id: "PurchaseButton"
+  inherit_alpha: true
+  slice9 {
+    x: 4.0
+    y: 4.0
+    z: 4.0
+    w: 4.0
+  }
+}
+nodes {
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  type: TYPE_TEXT
+  text: "<text>"
+  font: "Roboto-Bold"
+  id: "PurchaseButtonText"
+  parent: "PurchaseButton"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 335.0
+    y: 389.0
+  }
+  size {
+    x: 200.0
+    y: 75.0
+  }
+  type: TYPE_BOX
+  texture: "druid_example/rect_round2_width1"
+  id: "MapButton"
+  inherit_alpha: true
+  slice9 {
+    x: 4.0
+    y: 4.0
+    z: 4.0
+    w: 4.0
+  }
+}
+nodes {
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  type: TYPE_TEXT
+  text: "<text>"
+  font: "Roboto-Bold"
+  id: "MapButtonText"
+  parent: "MapButton"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 335.0
+    y: 251.0
+  }
+  size {
+    x: 200.0
+    y: 75.0
+  }
+  type: TYPE_BOX
+  texture: "druid_example/rect_round2_width1"
+  id: "NetworkButton"
+  inherit_alpha: true
+  slice9 {
+    x: 4.0
+    y: 4.0
+    z: 4.0
+    w: 4.0
+  }
+  enabled: false
+  visible: false
+}
+nodes {
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  type: TYPE_TEXT
+  text: "<text>"
+  font: "Roboto-Bold"
+  id: "NetworkButtonText"
+  parent: "NetworkButton"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 335.0
+    y: 105.0
+  }
+  size {
+    x: 200.0
+    y: 75.0
+  }
+  type: TYPE_BOX
+  texture: "druid_example/rect_round2_width1"
+  id: "FleetButton"
+  inherit_alpha: true
+  slice9 {
+    x: 4.0
+    y: 4.0
+    z: 4.0
+    w: 4.0
+  }
+}
+nodes {
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  type: TYPE_TEXT
+  text: "<text>"
+  font: "Roboto-Bold"
+  id: "FleetButtonText"
+  parent: "FleetButton"
+  inherit_alpha: true
+}
+material: "/builtins/materials/gui.material"
+adjust_reference: ADJUST_REFERENCE_PARENT

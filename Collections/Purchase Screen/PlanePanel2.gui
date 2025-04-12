@@ -1,0 +1,300 @@
+script: "/Collections/Purchase Screen/PlanePanel2.gui_script"
+fonts {
+  name: "Roboto-Regular"
+  font: "/Fonts/Roboto-Regular.font"
+}
+fonts {
+  name: "Roboto-Bold"
+  font: "/Fonts/Roboto-Bold.font"
+}
+textures {
+  name: "druid_example"
+  texture: "/example/assets/druid_example.atlas"
+}
+nodes {
+  position {
+    x: 1000.0
+    y: 643.0
+  }
+  size {
+    x: 200.0
+    y: 25.0
+  }
+  type: TYPE_TEXT
+  text: "<text>"
+  font: "Roboto-Regular"
+  id: "SpecsConfig"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    y: -25.0
+  }
+  size {
+    x: 200.0
+    y: 25.0
+  }
+  type: TYPE_TEXT
+  text: "<text>"
+  font: "Roboto-Regular"
+  id: "SpecsCat"
+  parent: "SpecsConfig"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    y: -50.0
+  }
+  size {
+    x: 200.0
+    y: 25.0
+  }
+  type: TYPE_TEXT
+  text: "<text>"
+  font: "Roboto-Regular"
+  id: "SpecsRange"
+  parent: "SpecsConfig"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    y: -75.0
+  }
+  size {
+    x: 200.0
+    y: 25.0
+  }
+  type: TYPE_TEXT
+  text: "<text>"
+  font: "Roboto-Regular"
+  id: "SpecsCapacity"
+  parent: "SpecsConfig"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    y: -100.0
+  }
+  size {
+    x: 200.0
+    y: 25.0
+  }
+  type: TYPE_TEXT
+  text: "<text>"
+  font: "Roboto-Regular"
+  id: "SpecsEfficiency"
+  parent: "SpecsConfig"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    y: -125.0
+  }
+  size {
+    x: 200.0
+    y: 25.0
+  }
+  type: TYPE_TEXT
+  text: "<text>"
+  font: "Roboto-Regular"
+  id: "SpecsSpeed"
+  parent: "SpecsConfig"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    y: -150.0
+  }
+  size {
+    x: 200.0
+    y: 25.0
+  }
+  type: TYPE_TEXT
+  text: "<text>"
+  font: "Roboto-Regular"
+  id: "SpecsTopSpeed"
+  parent: "SpecsConfig"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    y: -175.0
+  }
+  size {
+    x: 200.0
+    y: 25.0
+  }
+  type: TYPE_TEXT
+  text: "<text>"
+  font: "Roboto-Regular"
+  id: "SpecsType"
+  parent: "SpecsConfig"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    y: -200.0
+  }
+  size {
+    x: 200.0
+    y: 25.0
+  }
+  type: TYPE_TEXT
+  text: "<text>"
+  font: "Roboto-Regular"
+  id: "SpecsFuelType"
+  parent: "SpecsConfig"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    y: -225.0
+  }
+  size {
+    x: 200.0
+    y: 25.0
+  }
+  type: TYPE_TEXT
+  text: "<text>"
+  font: "Roboto-Regular"
+  id: "SpecsFuel"
+  parent: "SpecsConfig"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    y: -250.0
+  }
+  size {
+    x: 200.0
+    y: 25.0
+  }
+  type: TYPE_TEXT
+  text: "<text>"
+  font: "Roboto-Regular"
+  id: "SpecsWeight"
+  parent: "SpecsConfig"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    y: -275.0
+  }
+  size {
+    x: 200.0
+    y: 25.0
+  }
+  type: TYPE_TEXT
+  text: "<text>"
+  font: "Roboto-Regular"
+  id: "SpecsEmissions"
+  parent: "SpecsConfig"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 1000.0
+    y: 708.0
+  }
+  size {
+    x: 200.0
+    y: 60.0
+  }
+  type: TYPE_BOX
+  texture: "druid_example/rect_round2_width1"
+  id: "ChoosePlaneButton"
+  inherit_alpha: true
+  slice9 {
+    x: 4.0
+    y: 4.0
+    z: 4.0
+    w: 4.0
+  }
+}
+nodes {
+  scale {
+    x: 1.5
+    y: 1.5
+  }
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  color {
+    x: 0.0
+    y: 0.0
+    z: 0.0
+  }
+  type: TYPE_TEXT
+  text: "<text>"
+  font: "Roboto-Bold"
+  id: "ChoosePlaneText"
+  parent: "ChoosePlaneButton"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 1000.0
+    y: 227.0
+  }
+  size {
+    x: 300.0
+    y: 200.0
+  }
+  color {
+    x: 0.2
+    y: 0.4
+    z: 0.4
+  }
+  type: TYPE_BOX
+  id: "PurchaseBack"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+}
+nodes {
+  position {
+    y: 70.0
+  }
+  size {
+    x: 200.0
+    y: 40.0
+  }
+  type: TYPE_TEXT
+  text: "<text>"
+  font: "Roboto-Regular"
+  id: "UnitCostText"
+  parent: "PurchaseBack"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    y: 25.0
+  }
+  size {
+    x: 200.0
+    y: 40.0
+  }
+  type: TYPE_TEXT
+  text: "<text>"
+  font: "Roboto-Regular"
+  id: "UnitsText"
+  parent: "PurchaseBack"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    y: -70.0
+  }
+  size {
+    x: 200.0
+    y: 40.0
+  }
+  type: TYPE_TEXT
+  text: "<text>"
+  font: "Roboto-Regular"
+  id: "TotalCostText"
+  parent: "PurchaseBack"
+  inherit_alpha: true
+}
+material: "/builtins/materials/gui.material"
+adjust_reference: ADJUST_REFERENCE_PARENT

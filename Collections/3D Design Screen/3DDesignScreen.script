@@ -1,0 +1,48 @@
+local dt=0
+
+function init(self)
+	msg.post(".", "acquire_input_focus")
+	msg.post("@render:", "use_camera_projection")
+	msg.post("camera", "acquire_camera_focus")
+	
+	-- position directional light
+	self.light = vmath.vector4(0, 0, go.get_position().z + 1, 0)
+	local new_light = vmath.vector4(1.0, 1.0, 1.0, 1.0)
+	msg.post("@render:", "set_ambient_light", { color = new_light })
+	go.set("Airplane#AirplaneModel", "light", self.light)
+	
+	-- Initialize rotation speed
+	self.rotation_speed = 90 -- degrees per second
+end
+
+function on_input(self, action_id, action)
+	
+	-- Get current rotation
+	local rotation = go.get_rotation("Airplane#AirplaneModel")
+	
+	-- Use a default delta time if not provided
+	if (action.delta_time) then
+		dt = action.delta_time
+	else
+		dt = 1/60
+	end
+
+	-- Handle arrow key input
+	if action_id == hash("key_left") then
+		-- Rotate around y-axis (left)
+		local rot_y = vmath.quat_rotation_y(math.rad(self.rotation_speed * dt))
+		go.set_rotation(rotation * rot_y, "Airplane#AirplaneModel")
+	elseif action_id == hash("key_right") then
+		-- Rotate around y-axis (right)
+		local rot_y = vmath.quat_rotation_y(math.rad(-self.rotation_speed * dt))
+		go.set_rotation(rotation * rot_y, "Airplane#AirplaneModel")
+	elseif action_id == hash("key_up") then
+		-- Rotate around x-axis (up)
+		local rot_x = vmath.quat_rotation_x(math.rad(-self.rotation_speed * dt))
+		go.set_rotation(rotation * rot_x, "Airplane#AirplaneModel")
+	elseif action_id == hash("key_down") then
+		-- Rotate around x-axis (down)
+		local rot_x = vmath.quat_rotation_x(math.rad(self.rotation_speed * dt))
+		go.set_rotation(rotation * rot_x, "Airplane#AirplaneModel")
+	end
+end

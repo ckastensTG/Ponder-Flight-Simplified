@@ -1,0 +1,174 @@
+local unitSalesEstimate = 0
+local totalProfitEstimate = 0
+
+function init(self)
+	-- set permanent text here
+	self.text_title = gui.get_node("Title")
+	gui.set_text(self.text_title, G_UI_text.demand_title)
+	self.text_consumer = gui.get_node("Consumer")
+	gui.set_text(self.text_consumer, G_UI_text.demand_consumer)
+	self.text_premium = gui.get_node("Premium")
+	gui.set_text(self.text_premium, G_UI_text.demand_premium)
+	self.text_cargo = gui.get_node("Cargo")
+	gui.set_text(self.text_cargo, G_UI_text.demand_cargo)
+	self.text_ultraShort = gui.get_node("UltraShort")
+	gui.set_text(self.text_ultraShort, G_UI_text.demand_ultraShort)
+	self.text_short = gui.get_node("Short")
+	gui.set_text(self.text_short, G_UI_text.demand_short)
+	self.text_medium = gui.get_node("Medium")
+	gui.set_text(self.text_medium, G_UI_text.demand_medium)
+	self.text_long = gui.get_node("Long")
+	gui.set_text(self.text_long, G_UI_text.demand_long)
+	self.text_ultraLong = gui.get_node("UltraLong")
+	gui.set_text(self.text_ultraLong, G_UI_text.demand_ultraLong)
+
+	-- dynamic texy
+	self.text_ultraShort1 = gui.get_node("UltraShort1")
+	self.text_ultraShort2 = gui.get_node("UltraShort2")
+	self.text_ultraShort3 = gui.get_node("UltraShort3")
+	self.text_short1 = gui.get_node("Short1")
+	self.text_short2 = gui.get_node("Short2")
+	self.text_short3 = gui.get_node("Short3")
+	self.text_medium1 = gui.get_node("Medium1")
+	self.text_medium2 = gui.get_node("Medium2")
+	self.text_medium3 = gui.get_node("Medium3")
+	self.text_long1 = gui.get_node("Long1")
+	self.text_long2 = gui.get_node("Long2")
+	self.text_long3 = gui.get_node("Long3")
+	self.text_ultraLong1 = gui.get_node("UltraLong1")
+	self.text_ultraLong2 = gui.get_node("UltraLong2")
+	self.text_ultraLong3 = gui.get_node("UltraLong3")
+	self.text_salesEstimate = gui.get_node("SalesEstimate")
+	self.text_profitEstimate = gui.get_node("ProfitEstimate")
+	
+	-- Initialize refresh timer
+	self.refresh_timer = 0
+	refresh_demand(self)
+
+	msg.post(".", "refresh_demand_text")
+end
+
+function final(self)
+	-- Add finalization code here
+	-- Learn more: https://defold.com/manuals/script/
+	-- Remove this function if not needed
+end
+
+function refresh_demand(self)
+	unitSalesEstimate = 0
+	
+	-- Check if the plane is supersonic (Cat 5)
+	if G_currentPlane.planeCat == 5 then
+		-- Supersonic only uses column 3, but check range requirements for each row
+		if G_currentPlane.spec_range >= 3000 then
+			unitSalesEstimate = unitSalesEstimate + G_globalDemand[3][3] - G_globalSupply[3][3]
+		end
+		if G_currentPlane.spec_range >= 6000 then
+			unitSalesEstimate = unitSalesEstimate + G_globalDemand[4][3] - G_globalSupply[4][3]
+		end
+		if G_currentPlane.spec_range >= 10000 then
+			unitSalesEstimate = unitSalesEstimate + G_globalDemand[5][3] - G_globalSupply[5][3]
+		end
+	else
+		-- For categories 1-4, check both category and range requirements
+		
+		-- Determine which columns to use based on plane type
+		local columns = {}
+		if G_currentPlane.planeConfig == 2 then
+			-- Cargo planes only use column 2
+			columns = {2}
+		else
+			-- Passenger planes use columns 1 and 3
+			columns = {1, 3}
+		end
+		
+		-- Check each row with appropriate category and range requirements
+		for _, col in ipairs(columns) do
+			-- Row 1: small aircraft (planeCat 1)
+			if G_currentPlane.planeCat == 1 then
+				unitSalesEstimate = unitSalesEstimate + G_globalDemand[1][col] - G_globalSupply[1][col]
+			end
+			
+			-- Row 2: small or medium with range >= 1500
+			if (G_currentPlane.planeCat == 1 or G_currentPlane.planeCat == 2) and 
+			   G_currentPlane.spec_range >= 1500 then
+				unitSalesEstimate = unitSalesEstimate + G_globalDemand[2][col] - G_globalSupply[2][col]
+			end
+			
+			-- Row 3: medium or large with range >= 3000
+			if (G_currentPlane.planeCat == 2 or G_currentPlane.planeCat == 3) and 
+			   G_currentPlane.spec_range >= 3000 then
+				unitSalesEstimate = unitSalesEstimate + G_globalDemand[3][col] - G_globalSupply[3][col]
+			end
+			
+			-- Row 4: large or mega with range >= 6000
+			if (G_currentPlane.planeCat == 3 or G_currentPlane.planeCat == 4) and 
+			   G_currentPlane.spec_range >= 6000 then
+				unitSalesEstimate = unitSalesEstimate + G_globalDemand[4][col] - G_globalSupply[4][col]
+			end
+			
+			-- Row 5: only mega with range >= 10000
+			if G_currentPlane.planeCat == 4 and G_currentPlane.spec_range >= 10000 then
+				unitSalesEstimate = unitSalesEstimate + G_globalDemand[5][col] - G_globalSupply[5][col]
+			end
+		end
+	end
+	
+	-- Calculate total profit estimate
+	totalProfitEstimate = (unitSalesEstimate * (G_currentPlane.salePrice - G_currentPlane.prodCost)) - G_currentPlane.devCost
+end
+
+function update(self, dt)
+	-- Increment timer by delta time
+	self.refresh_timer = self.refresh_timer + dt
+	
+	-- Check if 2 seconds have passed
+	if self.refresh_timer >= 5 then
+		-- Reset timer
+		self.refresh_timer = 0
+		-- Refresh demand text
+		msg.post(".", "refresh_demand_text")
+	end
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("refresh_demand_text") then
+		refresh_demand(self)
+		gui.set_text(self.text_ultraShort1, G_globalSupply[1][1] .. "/" .. G_globalDemand[1][1])
+		gui.set_text(self.text_ultraShort2, G_globalSupply[1][2] .. "/" .. G_globalDemand[1][2])
+		gui.set_text(self.text_ultraShort3, G_globalSupply[1][3] .. "/" .. G_globalDemand[1][3])
+		gui.set_text(self.text_short1, G_globalSupply[2][1] .. "/" .. G_globalDemand[2][1])
+		gui.set_text(self.text_short2, G_globalSupply[2][2] .. "/" .. G_globalDemand[2][2])
+		gui.set_text(self.text_short3, G_globalSupply[2][3] .. "/" .. G_globalDemand[2][3])
+		gui.set_text(self.text_medium1, G_globalSupply[3][1] .. "/" .. G_globalDemand[3][1])
+		gui.set_text(self.text_medium2, G_globalSupply[3][2] .. "/" .. G_globalDemand[3][2])
+		gui.set_text(self.text_medium3, G_globalSupply[3][3] .. "/" .. G_globalDemand[3][3])
+		gui.set_text(self.text_long1, G_globalSupply[4][1] .. "/" .. G_globalDemand[4][1])
+		gui.set_text(self.text_long2, G_globalSupply[4][2] .. "/" .. G_globalDemand[4][2])
+		gui.set_text(self.text_long3, G_globalSupply[4][3] .. "/" .. G_globalDemand[4][3])
+		gui.set_text(self.text_ultraLong1, G_globalSupply[5][1] .. "/" .. G_globalDemand[5][1])
+		gui.set_text(self.text_ultraLong2, G_globalSupply[5][2] .. "/" .. G_globalDemand[5][2])
+		gui.set_text(self.text_ultraLong3, G_globalSupply[5][3] .. "/" .. G_globalDemand[5][3])
+		gui.set_text(self.text_salesEstimate, G_UI_text.demand_salesEst .. "\n" .. unitSalesEstimate .. " " .. G_UI_text.demand_units)
+		gui.set_text(self.text_profitEstimate, G_UI_text.demand_profitEst .. "\n" .. string.format("%.3f", totalProfitEstimate/1000) .. " " .. G_UI_text.dev_devCostUnits)
+	end
+
+end
+
+function on_input(self, action_id, action)
+	-- Add input-handling code here. The game object this script is attached to
+	-- must have acquired input focus:
+	--
+	--    msg.post(".", "acquire_input_focus")
+	--
+	-- All mapped input bindings will be received. Mouse and touch input will
+	-- be received regardless of where on the screen it happened.
+	-- Learn more: https://defold.com/manuals/input/
+	-- Remove this function if not needed
+end
+
+function on_reload(self)
+	-- Add reload-handling code here
+	-- Learn more: https://defold.com/manuals/hot-reload/
+	-- Remove this function if not needed
+end

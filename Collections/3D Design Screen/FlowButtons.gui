@@ -1,0 +1,201 @@
+script: "/Collections/3D Design Screen/FlowButtons.gui_script"
+fonts {
+  name: "Roboto-Regular"
+  font: "/Fonts/Roboto-Regular.font"
+}
+fonts {
+  name: "Roboto-Bold"
+  font: "/Fonts/Roboto-Bold.font"
+}
+textures {
+  name: "druid_example"
+  texture: "/example/assets/druid_example.atlas"
+}
+nodes {
+  position {
+    x: 1085.0
+    y: 233.0
+  }
+  size {
+    x: 150.0
+    y: 50.0
+  }
+  type: TYPE_BOX
+  texture: "druid_example/rect_round2_width1"
+  id: "CompareButton"
+  inherit_alpha: true
+  slice9 {
+    x: 4.0
+    y: 4.0
+    z: 4.0
+    w: 4.0
+  }
+}
+nodes {
+  size {
+    x: 150.0
+    y: 100.0
+  }
+  color {
+    x: 0.0
+    y: 0.0
+    z: 0.0
+  }
+  type: TYPE_TEXT
+  text: "<text>"
+  font: "Roboto-Bold"
+  id: "CompareButtonText"
+  parent: "CompareButton"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 1085.0
+    y: 160.0
+  }
+  size {
+    x: 150.0
+    y: 50.0
+  }
+  type: TYPE_BOX
+  texture: "druid_example/rect_round2_width1"
+  id: "SaveButton"
+  inherit_alpha: true
+  slice9 {
+    x: 4.0
+    y: 4.0
+    z: 4.0
+    w: 4.0
+  }
+}
+nodes {
+  size {
+    x: 150.0
+    y: 100.0
+  }
+  color {
+    x: 0.0
+    y: 0.0
+    z: 0.0
+  }
+  type: TYPE_TEXT
+  text: "<text>"
+  font: "Roboto-Bold"
+  id: "SaveButtonText"
+  parent: "SaveButton"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 1266.0
+    y: 233.0
+  }
+  size {
+    x: 150.0
+    y: 50.0
+  }
+  type: TYPE_BOX
+  texture: "druid_example/rect_round2_width1"
+  id: "LoadButton"
+  inherit_alpha: true
+  slice9 {
+    x: 4.0
+    y: 4.0
+    z: 4.0
+    w: 4.0
+  }
+}
+nodes {
+  size {
+    x: 150.0
+    y: 100.0
+  }
+  color {
+    x: 0.0
+    y: 0.0
+    z: 0.0
+  }
+  type: TYPE_TEXT
+  text: "<text>"
+  font: "Roboto-Bold"
+  id: "LoadButtonText"
+  parent: "LoadButton"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 1266.0
+    y: 158.0
+  }
+  size {
+    x: 150.0
+    y: 50.0
+  }
+  type: TYPE_BOX
+  texture: "druid_example/rect_round2_width1"
+  id: "ResetButton"
+  inherit_alpha: true
+  slice9 {
+    x: 4.0
+    y: 4.0
+    z: 4.0
+    w: 4.0
+  }
+}
+nodes {
+  size {
+    x: 150.0
+    y: 100.0
+  }
+  color {
+    x: 0.0
+    y: 0.0
+    z: 0.0
+  }
+  type: TYPE_TEXT
+  text: "<text>"
+  font: "Roboto-Bold"
+  id: "ResetButtonText"
+  parent: "ResetButton"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 848.0
+    y: 100.0
+  }
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  color {
+    x: 0.0
+    y: 0.502
+    z: 0.0
+  }
+  type: TYPE_BOX
+  texture: "druid_example/rect_round2_width1"
+  id: "DevelopButton"
+  inherit_alpha: true
+  slice9 {
+    x: 4.0
+    y: 4.0
+    z: 4.0
+    w: 4.0
+  }
+}
+nodes {
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  type: TYPE_TEXT
+  text: "<text>"
+  font: "Roboto-Bold"
+  id: "DevelopButtonText"
+  parent: "DevelopButton"
+  inherit_alpha: true
+}
+material: "/builtins/materials/gui.material"
+adjust_reference: ADJUST_REFERENCE_PARENT
+

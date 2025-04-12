@@ -1,0 +1,159 @@
+script: "/Collections/Development Screen/NamePopup.gui_script"
+fonts {
+  name: "Roboto-Regular"
+  font: "/Fonts/Roboto-Regular.font"
+}
+fonts {
+  name: "Roboto-Bold"
+  font: "/Fonts/Roboto-Bold.font"
+}
+nodes {
+  position {
+    x: 685.0
+    y: 384.0
+  }
+  size {
+    x: 1024.0
+    y: 768.0
+  }
+  color {
+    x: 0.0
+    y: 0.0
+    z: 0.0
+  }
+  type: TYPE_BOX
+  id: "modal_bg"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 685.0
+    y: 384.0
+  }
+  size {
+    x: 400.0
+    y: 300.0
+  }
+  color {
+    x: 0.2
+    y: 0.2
+    z: 0.2
+  }
+  type: TYPE_BOX
+  id: "background"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 685.0
+    y: 484.0
+  }
+  size {
+    x: 380.0
+    y: 50.0
+  }
+  type: TYPE_TEXT
+  text: "Name Your Airplane"
+  font: "Roboto-Bold"
+  id: "title"
+  shadow {
+    x: 1.0
+    y: 1.0
+    z: 1.0
+  }
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 685.0
+    y: 434.0
+  }
+  size {
+    x: 380.0
+    y: 50.0
+  }
+  type: TYPE_TEXT
+  text: "Please enter a name for your airplane:"
+  font: "Roboto-Regular"
+  id: "message"
+  shadow {
+    x: 1.0
+    y: 1.0
+    z: 1.0
+  }
+  line_break: true
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 685.0
+    y: 384.0
+  }
+  size {
+    x: 300.0
+    y: 40.0
+  }
+  type: TYPE_BOX
+  id: "input_bg"
+  inherit_alpha: true
+}
+nodes {
+  size {
+    x: 280.0
+    y: 30.0
+  }
+  color {
+    x: 0.0
+    y: 0.0
+    z: 0.0
+  }
+  type: TYPE_TEXT
+  text: "Enter name here"
+  font: "Roboto-Regular"
+  id: "input_text"
+  shadow {
+    x: 1.0
+    y: 1.0
+    z: 1.0
+  }
+  parent: "input_bg"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 685.0
+    y: 314.0
+  }
+  size {
+    x: 150.0
+    y: 50.0
+  }
+  color {
+    x: 0.3
+    y: 0.6
+    z: 0.3
+  }
+  type: TYPE_BOX
+  id: "confirm_button"
+  inherit_alpha: true
+}
+nodes {
+  size {
+    x: 140.0
+    y: 40.0
+  }
+  type: TYPE_TEXT
+  text: "Confirm"
+  font: "Roboto-Bold"
+  id: "confirm_text"
+  shadow {
+    x: 1.0
+    y: 1.0
+    z: 1.0
+  }
+  parent: "confirm_button"
+  inherit_alpha: true
+}
+
+material: "/builtins/materials/gui.material"
+adjust_reference: ADJUST_REFERENCE_PARENT

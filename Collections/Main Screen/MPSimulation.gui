@@ -1,0 +1,235 @@
+script: "/Collections/Main Screen/MPSimulation.gui_script"
+fonts {
+  name: "Roboto-Regular"
+  font: "/Fonts/Roboto-Regular.font"
+}
+fonts {
+  name: "Roboto-Bold"
+  font: "/Fonts/Roboto-Bold.font"
+}
+textures {
+  name: "druid_example"
+  texture: "/example/assets/druid_example.atlas"
+}
+nodes {
+  position {
+    x: 61.0
+    y: 694.0
+  }
+  rotation {
+    z: 0.0
+  }
+  scale {
+    x: 1.0
+    y: 1.0
+    z: 1.0
+  }
+  size {
+    x: 50.0
+    y: 50.0
+  }
+  color {
+    x: 0.6
+    y: 0.302
+    z: 0.0
+    w: 1.0
+  }
+  texture: "druid_example/rect_round2_width1"
+  type: TYPE_BOX
+  id: "MPProdButton1"
+  inherit_alpha: true
+  slice9 {
+    x: 4.0
+    y: 4.0
+    z: 4.0
+    w: 4.0
+  }
+  size_mode: SIZE_MODE_MANUAL
+}
+nodes {
+  position {
+    x: 0.0
+    y: 0.0
+  }
+  size {
+    x: 200.0
+    y: 50.0
+  }
+  type: TYPE_TEXT
+  text: "Prod1"
+  font: "Roboto-Bold"
+  id: "Prod1"
+  parent: "MPProdButton1"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 158.0
+    y: 744.0
+  }
+  size {
+    x: 200.0
+    y: 30.0
+  }
+  type: TYPE_TEXT
+  text: "TESTING"
+  font: "Roboto-Regular"
+  id: "text"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 129.0
+    y: 694.0
+  }
+  rotation {
+    z: 0.0
+  }
+  scale {
+    x: 1.0
+    y: 1.0
+    z: 1.0
+  }
+  size {
+    x: 50.0
+    y: 50.0
+  }
+  color {
+    x: 0.6
+    y: 0.302
+    z: 0.0
+    w: 1.0
+  }
+  texture: "druid_example/rect_round2_width1"
+  type: TYPE_BOX
+  id: "MPProdButton2"
+  inherit_alpha: true
+  slice9 {
+    x: 4.0
+    y: 4.0
+    z: 4.0
+    w: 4.0
+  }
+  size_mode: SIZE_MODE_MANUAL
+}
+nodes {
+  position {
+    x: 0.0
+    y: 0.0
+  }
+  size {
+    x: 200.0
+    y: 50.0
+  }
+  type: TYPE_TEXT
+  text: "Prod2\n"
+  ""
+  font: "Roboto-Bold"
+  id: "Prod2"
+  parent: "MPProdButton2"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 206.0
+    y: 694.0
+  }
+  rotation {
+    z: 0.0
+  }
+  scale {
+    x: 1.0
+    y: 1.0
+    z: 1.0
+  }
+  size {
+    x: 50.0
+    y: 50.0
+  }
+  color {
+    x: 0.0
+    y: 0.102
+    z: 0.502
+    w: 1.0
+  }
+  texture: "druid_example/rect_round2_width1"
+  type: TYPE_BOX
+  id: "MPLineButton1"
+  inherit_alpha: true
+  slice9 {
+    x: 4.0
+    y: 4.0
+    z: 4.0
+    w: 4.0
+  }
+  size_mode: SIZE_MODE_MANUAL
+}
+nodes {
+  position {
+    x: 0.0
+    y: 0.0
+  }
+  size {
+    x: 200.0
+    y: 50.0
+  }
+  type: TYPE_TEXT
+  text: "Line1"
+  font: "Roboto-Bold"
+  id: "Line1"
+  parent: "MPLineButton1"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 273.0
+    y: 694.0
+  }
+  rotation {
+    z: 0.0
+  }
+  scale {
+    x: 1.0
+    y: 1.0
+    z: 1.0
+  }
+  size {
+    x: 50.0
+    y: 50.0
+  }
+  color {
+    x: 0.0
+    y: 0.102
+    z: 0.502
+    w: 1.0
+  }
+  texture: "druid_example/rect_round2_width1"
+  type: TYPE_BOX
+  id: "MPLineButton2"
+  inherit_alpha: true
+  slice9 {
+    x: 4.0
+    y: 4.0
+    z: 4.0
+    w: 4.0
+  }
+  size_mode: SIZE_MODE_MANUAL
+}
+nodes {
+  position {
+    x: 0.0
+    y: 0.0
+  }
+  size {
+    x: 200.0
+    y: 50.0
+  }
+  type: TYPE_TEXT
+  text: "Line2"
+  font: "Roboto-Bold"
+  id: "Line2"
+  parent: "MPLineButton2"
+  inherit_alpha: true
+}
+material: "/builtins/materials/gui.material"
+adjust_reference: ADJUST_REFERENCE_PARENT

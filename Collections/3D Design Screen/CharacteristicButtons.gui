@@ -1,0 +1,387 @@
+script: "/Collections/3D Design Screen/CharacteristicButtons.gui_script"
+fonts {
+  name: "Roboto-Regular"
+  font: "/Fonts/Roboto-Regular.font"
+}
+fonts {
+  name: "Roboto-Bold"
+  font: "/Fonts/Roboto-Bold.font"
+}
+textures {
+  name: "druid_example"
+  texture: "/example/assets/druid_example.atlas"
+}
+nodes {
+  position {
+    x: 386.0
+    y: 221.0
+  }
+  size {
+    x: 200.0
+    y: 50.0
+  }
+  type: TYPE_BOX
+  texture: "druid_example/rect_round2_width1"
+  id: "TypeButton"
+  inherit_alpha: true
+  slice9 {
+    x: 4.0
+    y: 4.0
+    z: 4.0
+    w: 4.0
+  }
+}
+nodes {
+  position {
+    y: 50.0
+  }
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  type: TYPE_TEXT
+  text: "<text>"
+  font: "Roboto-Regular"
+  id: "TypeButtonText"
+  parent: "TypeButton"
+  inherit_alpha: true
+}
+nodes {
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  color {
+    x: 0.0
+    y: 0.0
+    z: 0.0
+  }
+  type: TYPE_TEXT
+  text: "<text>"
+  font: "Roboto-Bold"
+  id: "TypeText"
+  parent: "TypeButton"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 149.0
+    y: 221.0
+  }
+  size {
+    x: 200.0
+    y: 50.0
+  }
+  type: TYPE_BOX
+  texture: "druid_example/rect_round2_width1"
+  id: "CategoryButton"
+  inherit_alpha: true
+  slice9 {
+    x: 4.0
+    y: 4.0
+    z: 4.0
+    w: 4.0
+  }
+}
+nodes {
+  position {
+    y: 50.0
+  }
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  type: TYPE_TEXT
+  text: "<text>"
+  font: "Roboto-Regular"
+  id: "CategoryButtonText"
+  parent: "CategoryButton"
+  inherit_alpha: true
+}
+nodes {
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  color {
+    x: 0.0
+    y: 0.0
+    z: 0.0
+  }
+  type: TYPE_TEXT
+  text: "<text>"
+  font: "Roboto-Bold"
+  id: "CategoryText"
+  parent: "CategoryButton"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 848.0
+    y: 221.0
+  }
+  size {
+    x: 200.0
+    y: 50.0
+  }
+  type: TYPE_BOX
+  texture: "druid_example/rect_round2_width1"
+  id: "ConfigurationButton"
+  inherit_alpha: true
+  slice9 {
+    x: 4.0
+    y: 4.0
+    z: 4.0
+    w: 4.0
+  }
+}
+nodes {
+  position {
+    y: 50.0
+  }
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  type: TYPE_TEXT
+  text: "<text>"
+  font: "Roboto-Regular"
+  id: "ConfigurationButtonText"
+  parent: "ConfigurationButton"
+  inherit_alpha: true
+}
+nodes {
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  color {
+    x: 0.0
+    y: 0.0
+    z: 0.0
+  }
+  type: TYPE_TEXT
+  text: "<text>"
+  font: "Roboto-Bold"
+  id: "ConfigurationText"
+  parent: "ConfigurationButton"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 621.0
+    y: 221.0
+  }
+  size {
+    x: 200.0
+    y: 50.0
+  }
+  type: TYPE_BOX
+  texture: "druid_example/rect_round2_width1"
+  id: "FuelTypeButton"
+  inherit_alpha: true
+  slice9 {
+    x: 4.0
+    y: 4.0
+    z: 4.0
+    w: 4.0
+  }
+}
+nodes {
+  position {
+    y: 50.0
+  }
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  type: TYPE_TEXT
+  text: "<text>"
+  font: "Roboto-Regular"
+  id: "FuelTypeButtonText"
+  parent: "FuelTypeButton"
+  inherit_alpha: true
+}
+nodes {
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  color {
+    x: 0.0
+    y: 0.0
+    z: 0.0
+  }
+  type: TYPE_TEXT
+  text: "<text>"
+  font: "Roboto-Bold"
+  id: "FuelTypeText"
+  parent: "FuelTypeButton"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 621.0
+    y: 100.0
+  }
+  size {
+    x: 200.0
+    y: 50.0
+  }
+  type: TYPE_BOX
+  id: "FuelAmountButton"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+  visible: false
+}
+nodes {
+  position {
+    y: 50.0
+  }
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  type: TYPE_TEXT
+  text: "<text>"
+  font: "Roboto-Regular"
+  id: "FuelAmountButtonText"
+  parent: "FuelAmountButton"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 386.0
+    y: 100.0
+  }
+  size {
+    x: 200.0
+    y: 50.0
+  }
+  type: TYPE_BOX
+  texture: "druid_example/rect_round2_width1"
+  id: "EngineConfigButton"
+  inherit_alpha: true
+  slice9 {
+    x: 4.0
+    y: 4.0
+    z: 4.0
+    w: 4.0
+  }
+}
+nodes {
+  position {
+    y: 50.0
+  }
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  type: TYPE_TEXT
+  text: "<text>"
+  font: "Roboto-Regular"
+  id: "EngineConfigButtonText"
+  parent: "EngineConfigButton"
+  inherit_alpha: true
+}
+nodes {
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  color {
+    x: 0.0
+    y: 0.0
+    z: 0.0
+  }
+  type: TYPE_TEXT
+  text: "<text>"
+  font: "Roboto-Bold"
+  id: "EngineConfigText"
+  parent: "EngineConfigButton"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 685.0
+    y: 385.0
+    z: -1.0
+  }
+  size {
+    x: 1000.0
+    y: 600.0
+  }
+  color {
+    x: 0.702
+    y: 0.902
+    z: 0.702
+  }
+  type: TYPE_BOX
+  id: "PopupBackground"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+}
+nodes {
+  position {
+    y: -71.0
+  }
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  color {
+    x: 0.0
+    y: 0.0
+  }
+  type: TYPE_BOX
+  texture: "druid_example/rect_round2_width1"
+  id: "OptionTemplate"
+  inherit_alpha: true
+  slice9 {
+    x: 4.0
+    y: 4.0
+    z: 4.0
+    w: 4.0
+  }
+}
+nodes {
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  type: TYPE_TEXT
+  text: "<text>"
+  font: "Roboto-Regular"
+  id: "OptionTemplateText"
+  parent: "OptionTemplate"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 151.0
+    y: 150.0
+  }
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  type: TYPE_BOX
+  id: "SizeButton"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+  visible: false
+}
+nodes {
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  type: TYPE_TEXT
+  text: "<text>"
+  font: "Roboto-Regular"
+  id: "SizeButtonText"
+  parent: "SizeButton"
+  inherit_alpha: true
+}
+material: "/builtins/materials/gui.material"
+adjust_reference: ADJUST_REFERENCE_PARENT

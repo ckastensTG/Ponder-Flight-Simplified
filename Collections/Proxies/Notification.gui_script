@@ -1,0 +1,76 @@
+function init(self)
+    -- Get GUI nodes
+    self.notification_box = gui.get_node("notification_box")
+    self.title_text = gui.get_node("title_text")
+    self.message_text = gui.get_node("message_text")
+    
+    -- Initialize properties
+    self.active = false
+    self.timer = 0
+    self.duration = 0
+    
+    -- Hide notification initially
+    gui.set_enabled(self.notification_box, false)
+    
+    -- Acquire input focus to handle clicks
+    msg.post(".", "acquire_input_focus")
+end
+
+function update(self, dt)
+    -- Handle notification timer
+    if self.active then
+        self.timer = self.timer + dt
+        if self.timer >= self.duration then
+            -- Hide notification when time is up
+            gui.set_enabled(self.notification_box, false)
+            self.active = false
+        end
+    end
+end
+
+function on_message(self, message_id, message, sender)
+    if message_id == hash("show_notification") then
+        print("Notification received: " .. message.title)
+        -- Set notification content
+        gui.set_text(self.title_text, message.title)
+        gui.set_text(self.message_text, message.message)
+        
+        -- Show notification
+        gui.set_enabled(self.notification_box, true)
+        
+        -- Set timer
+        self.active = true
+        self.timer = 0
+        self.duration = message.duration or 3  -- Default 3 seconds
+        
+        -- Optional: Animate the notification in
+        local pos = gui.get_position(self.notification_box)
+        local start_pos = vmath.vector3(pos.x, pos.y - 20, pos.z)
+        gui.set_position(self.notification_box, start_pos)
+        gui.animate(self.notification_box, "position.y", pos.y, gui.EASING_OUTQUAD, 0.3)
+        
+        -- Fade in
+        local color = gui.get_color(self.notification_box)
+        local start_color = vmath.vector4(color.x, color.y, color.z, 0)
+        gui.set_color(self.notification_box, start_color)
+        gui.animate(self.notification_box, "color.w", color.w, gui.EASING_OUTQUAD, 0.3)
+    end
+end
+
+function on_input(self, action_id, action)
+    -- Allow clicking to dismiss notification
+    if self.active and action_id == hash("touch") and action.pressed then
+        if gui.pick_node(self.notification_box, action.x, action.y) then
+            -- Animate out
+            local pos = gui.get_position(self.notification_box)
+            gui.animate(self.notification_box, "position.y", pos.y - 20, gui.EASING_INQUAD, 0.2, 0, function()
+                gui.set_enabled(self.notification_box, false)
+            end)
+            gui.animate(self.notification_box, "color.w", 0, gui.EASING_INQUAD, 0.2)
+            
+            self.active = false
+            return true  -- Consume input
+        end
+    end
+    return false
+end 

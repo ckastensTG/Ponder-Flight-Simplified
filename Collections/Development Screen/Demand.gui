@@ -1,0 +1,416 @@
+script: "/Collections/Development Screen/Demand.gui_script"
+fonts {
+  name: "Avenir"
+  font: "/Fonts/Avenir.font"
+}
+nodes {
+  position {
+    x: 821.0
+    y: 448.0
+  }
+  size {
+    x: 1050.0
+    y: 600.0
+  }
+  color {
+    x: 0.0
+    y: 0.2
+    z: 0.2
+  }
+  type: TYPE_BOX
+  id: "Background"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+}
+nodes {
+  position {
+    x: 929.0
+    y: 709.0
+  }
+  size {
+    x: 200.0
+    y: 75.0
+  }
+  type: TYPE_TEXT
+  text: "<text>"
+  font: "Avenir"
+  id: "Title"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 678.0
+    y: 634.0
+  }
+  size {
+    x: 250.0
+    y: 75.0
+  }
+  type: TYPE_TEXT
+  text: "<text>"
+  font: "Avenir"
+  id: "Consumer"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 1179.0
+    y: 634.0
+  }
+  size {
+    x: 250.0
+    y: 75.0
+  }
+  type: TYPE_TEXT
+  text: "<text>"
+  font: "Avenir"
+  id: "Premium"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 926.0
+    y: 634.0
+  }
+  size {
+    x: 250.0
+    y: 75.0
+  }
+  type: TYPE_TEXT
+  text: "<text>"
+  font: "Avenir"
+  id: "Cargo"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 449.0
+    y: 554.0
+  }
+  size {
+    x: 200.0
+    y: 75.0
+  }
+  type: TYPE_TEXT
+  text: "<text>"
+  font: "Avenir"
+  id: "UltraShort"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 449.0
+    y: 476.0
+  }
+  size {
+    x: 200.0
+    y: 75.0
+  }
+  type: TYPE_TEXT
+  text: "<text>"
+  font: "Avenir"
+  id: "Short"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 449.0
+    y: 402.0
+  }
+  size {
+    x: 200.0
+    y: 75.0
+  }
+  type: TYPE_TEXT
+  text: "<text>"
+  font: "Avenir"
+  id: "Medium"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 449.0
+    y: 332.0
+  }
+  size {
+    x: 200.0
+    y: 75.0
+  }
+  type: TYPE_TEXT
+  text: "<text>"
+  font: "Avenir"
+  id: "Long"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 449.0
+    y: 258.0
+  }
+  size {
+    x: 200.0
+    y: 75.0
+  }
+  type: TYPE_TEXT
+  text: "<text>"
+  font: "Avenir"
+  id: "UltraLong"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 678.0
+    y: 479.0
+  }
+  size {
+    x: 250.0
+    y: 75.0
+  }
+  type: TYPE_TEXT
+  text: "<text>"
+  font: "Avenir"
+  id: "Short1"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 928.0
+    y: 479.0
+  }
+  size {
+    x: 250.0
+    y: 75.0
+  }
+  type: TYPE_TEXT
+  text: "<text>"
+  font: "Avenir"
+  id: "Short2"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 1179.0
+    y: 479.0
+  }
+  size {
+    x: 250.0
+    y: 75.0
+  }
+  type: TYPE_TEXT
+  text: "<text>"
+  font: "Avenir"
+  id: "Short3"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 678.0
+    y: 399.0
+  }
+  size {
+    x: 250.0
+    y: 75.0
+  }
+  type: TYPE_TEXT
+  text: "<text>"
+  font: "Avenir"
+  id: "Medium1"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 928.0
+    y: 399.0
+  }
+  size {
+    x: 250.0
+    y: 75.0
+  }
+  type: TYPE_TEXT
+  text: "<text>"
+  font: "Avenir"
+  id: "Medium2"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 1179.0
+    y: 399.0
+  }
+  size {
+    x: 250.0
+    y: 75.0
+  }
+  type: TYPE_TEXT
+  text: "<text>"
+  font: "Avenir"
+  id: "Medium3"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 770.0
+    y: 190.0
+  }
+  size {
+    x: 200.0
+    y: 50.0
+  }
+  type: TYPE_TEXT
+  text: "<text>"
+  font: "Avenir"
+  id: "SalesEstimate"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 1041.0
+    y: 190.0
+  }
+  size {
+    x: 200.0
+    y: 50.0
+  }
+  type: TYPE_TEXT
+  text: "<text>"
+  font: "Avenir"
+  id: "ProfitEstimate"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 678.0
+    y: 554.0
+  }
+  size {
+    x: 250.0
+    y: 75.0
+  }
+  type: TYPE_TEXT
+  text: "<text>"
+  font: "Avenir"
+  id: "UltraShort1"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 928.0
+    y: 554.0
+  }
+  size {
+    x: 250.0
+    y: 75.0
+  }
+  type: TYPE_TEXT
+  text: "<text>"
+  font: "Avenir"
+  id: "UltraShort2"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 1179.0
+    y: 554.0
+  }
+  size {
+    x: 250.0
+    y: 75.0
+  }
+  type: TYPE_TEXT
+  text: "<text>"
+  font: "Avenir"
+  id: "UltraShort3"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 678.0
+    y: 329.0
+  }
+  size {
+    x: 250.0
+    y: 75.0
+  }
+  type: TYPE_TEXT
+  text: "<text>"
+  font: "Avenir"
+  id: "Long1"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 928.0
+    y: 329.0
+  }
+  size {
+    x: 250.0
+    y: 75.0
+  }
+  type: TYPE_TEXT
+  text: "<text>"
+  font: "Avenir"
+  id: "Long2"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 1179.0
+    y: 329.0
+  }
+  size {
+    x: 250.0
+    y: 75.0
+  }
+  type: TYPE_TEXT
+  text: "<text>"
+  font: "Avenir"
+  id: "Long3"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 678.0
+    y: 257.0
+  }
+  size {
+    x: 250.0
+    y: 75.0
+  }
+  type: TYPE_TEXT
+  text: "<text>"
+  font: "Avenir"
+  id: "UltraLong1"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 928.0
+    y: 257.0
+  }
+  size {
+    x: 250.0
+    y: 75.0
+  }
+  type: TYPE_TEXT
+  text: "<text>"
+  font: "Avenir"
+  id: "UltraLong2"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 1179.0
+    y: 257.0
+  }
+  size {
+    x: 250.0
+    y: 75.0
+  }
+  type: TYPE_TEXT
+  text: "<text>"
+  font: "Avenir"
+  id: "UltraLong3"
+  inherit_alpha: true
+}
+material: "/builtins/materials/gui.material"
+adjust_reference: ADJUST_REFERENCE_PARENT

@@ -1,0 +1,56 @@
+function init(self)
+	self.text_specsTitle = gui.get_node("SpecsTitle")
+	self.text_specsWeight = gui.get_node("SpecsWeight")
+	self.text_specsSpeed = gui.get_node("SpecsSpeed")
+	self.text_specsTopSpeed = gui.get_node("SpecsTopSpeed")
+	self.text_specsRange = gui.get_node("SpecsRange")
+	self.text_specsCapacity = gui.get_node("SpecsCapacity")
+	self.text_specsEfficiency = gui.get_node("SpecsEfficiency")
+	self.text_specsEmissions = gui.get_node("SpecsEmissions")
+	self.text_specsFuel = gui.get_node("SpecsFuel")
+	msg.post(".", "refresh_specs_text")
+end
+
+function final(self)
+	-- Add finalization code here
+	-- Learn more: https://defold.com/manuals/script/
+	-- Remove this function if not needed
+end
+
+function update(self, dt)
+	-- Add update code here
+	-- Learn more: https://defold.com/manuals/script/
+	-- Remove this function if not needed
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("refresh_specs_text") then
+		gui.set_text(self.text_specsTitle, G_UI_text.specs_title)
+		gui.set_text(self.text_specsWeight, G_UI_text.specs_weight .. "\n" .. G_currentPlane.spec_weight .. " kg")
+		gui.set_text(self.text_specsSpeed, G_UI_text.specs_speed .. "\n" .. G_currentPlane.spec_avgspeed .. " km/h")
+		gui.set_text(self.text_specsTopSpeed, G_UI_text.specs_topspeed .. "\n" .. G_currentPlane.spec_topspeed .. " km/h")
+		gui.set_text(self.text_specsRange, G_UI_text.specs_range .. "\n" .. G_currentPlane.spec_range .. "km")
+		gui.set_text(self.text_specsCapacity, G_UI_text.specs_capacity .. "\n" .. G_currentPlane.spec_passCapacity .. " passengers or" .. "\n" .. G_currentPlane.spec_cargoCapacity .. " kg")
+		gui.set_text(self.text_specsEfficiency, G_UI_text.specs_efficiency .. "\n" .. G_currentPlane.spec_passEfficiency .. " kg fuel/seat hour or " .. "\n" .. G_currentPlane.spec_cargoEfficiency .. " kg")
+		gui.set_text(self.text_specsEmissions, G_UI_text.specs_emissions .. "\n" .. G_currentPlane.spec_emissions .. "kg CO2/h")
+		gui.set_text(self.text_specsFuel, G_UI_text.specs_fuel .. "\n" .. G_currentPlane.spec_fuel .. " kg")
+	end
+end
+
+function on_input(self, action_id, action)
+	-- Add input-handling code here. The game object this script is attached to
+	-- must have acquired input focus:
+	--
+	--    msg.post(".", "acquire_input_focus")
+	--
+	-- All mapped input bindings will be received. Mouse and touch input will
+	-- be received regardless of where on the screen it happened.
+	-- Learn more: https://defold.com/manuals/input/
+	-- Remove this function if not needed
+end
+
+function on_reload(self)
+	-- Add reload-handling code here
+	-- Learn more: https://defold.com/manuals/hot-reload/
+	-- Remove this function if not needed
+end

@@ -1,0 +1,351 @@
+local druid = require("druid.druid")
+local sliderUnits = 1
+local unitPrice = 0
+
+function init(self)
+	self.druid = druid.new(self)
+	
+	-- Initialize references to text nodes for plane specifications
+--	self.text_specs_name = gui.get_node("SpecsName")
+	self.text_specs_weight = gui.get_node("SpecsWeight")
+    self.text_specs_fuelType = gui.get_node("SpecsFuelType")
+	self.text_specs_fuel = gui.get_node("SpecsFuel")
+	self.text_specs_efficiency = gui.get_node("SpecsEfficiency")
+	self.text_specs_top_speed = gui.get_node("SpecsTopSpeed")
+	self.text_specs_speed = gui.get_node("SpecsSpeed")
+	self.text_specs_range = gui.get_node("SpecsRange")
+	self.text_specs_capacity = gui.get_node("SpecsCapacity")
+	self.text_specs_emissions = gui.get_node("SpecsEmissions")
+	self.text_specs_type = gui.get_node("SpecsType")
+	self.text_specs_cat = gui.get_node("SpecsCat")
+	self.text_specs_config = gui.get_node("SpecsConfig")
+	
+	-- Initialize references to purchase related text nodes
+	self.text_units = gui.get_node("UnitsText")
+	self.text_unit_cost = gui.get_node("UnitCostText")
+	self.text_total_cost = gui.get_node("TotalCostText")
+	
+	-- Initialize references to buttons and their text
+	self.button_choose_plane = gui.get_node("ChoosePlaneButton")
+	self.text_choose_plane = gui.get_node("ChoosePlaneText")
+	self.button_purchase = gui.get_node("PurchaseButton")
+	self.text_purchase_button = gui.get_node("PurchaseButtonText")
+	
+	-- Create Druid buttons
+	self.druid:new_button("ChoosePlaneButton", function()
+		print("HERE")
+		msg.post("#", "show_plane_selection_popup", { planes = S_airplaneAvailabilityList })
+	end)
+	
+	self.druid:new_button("PurchaseButton", function()
+		-- Only allow purchase if a plane is selected
+		if self.current_plane and self.purchase_units and self.purchase_units > 0 then
+			-- Check if player has enough cash
+			if G_cashOnHand >= self.purchase_total_cost then
+				-- Player has enough cash, deduct purchase cost
+				G_cashOnHand = G_cashOnHand - self.purchase_total_cost
+				
+				-- Send a message to proxy to deposit money in seller's account
+				msg.post("ProxyCollection:/ProxyCalls", "deposit_money", {
+					amount = self.purchase_total_cost,
+					seller = self.current_plane.devTeam
+				})
+
+				-- Add purchased planes to fleet using the new table structure
+				local found = false
+				
+				-- Look for an existing entry with the same plane index
+				-- CKNOTE - should just be able to index using Lua, check later
+				for i, fleet_entry in ipairs(GAirline_fleet) do
+					if fleet_entry[1] == self.current_plane_index then
+						-- Found existing entry, update quantity
+						GAirline_fleet[i][2] = GAirline_fleet[i][2] + self.purchase_units
+						found = true
+						break
+					end
+				end
+				
+				-- If no existing entry found, add a new one
+				if not found then
+					table.insert(GAirline_fleet, {self.current_plane_index, self.purchase_units})
+				end
+				
+				-- Send notification of successful purchase
+				msg.post("ProxyCollection:/NotificationBox", "show_notification", {
+					title = "Purchase Complete",
+					message = "Successfully purchased " .. self.purchase_units .. " units of " .. 
+							  (self.current_plane and self.current_plane.planeName or "Unknown"),
+					duration = 5
+				})
+			else
+				-- Not enough cash - send notification instead of using message
+				msg.post("ProxyCollection:/NotificationBox", "show_notification", {
+					title = "Purchase Failed",
+					message = "Not enough cash. Required: $" .. string.format("%.2f", self.purchase_total_cost / 1000) .. 
+							  "B, Available: $" .. string.format("%.2f", G_cashOnHand / 1000) .. "B",
+					duration = 5
+				})
+			end
+		end
+	end)
+	
+	-- Get a reference to the background box
+	self.purchase_back = gui.get_node("PurchaseBack")
+	
+	-- Acquire input focus to handle button clicks
+	msg.post(".", "acquire_input_focus")
+	
+	-- Set initial text (this would typically come from a message or data structure)
+	-- You could use a message similar to "set_buttons_text" in HUDGui
+	-- For now, I'll just initialize with placeholder text
+	reset_display1(self)
+	
+	self.druid:final()
+end
+
+-- Helper function to reset/initialize the display
+function reset_display1(self)
+	-- Set placeholder text
+--	gui.set_text(self.text_specs_name, "Select Plane")
+	gui.set_text(self.text_specs_weight, G_UI_text.specs_weight)
+	gui.set_text(self.text_specs_fuelType, G_UI_text.char_fueltype)
+	gui.set_text(self.text_specs_efficiency, G_UI_text.specs_efficiency)
+	gui.set_text(self.text_specs_top_speed, G_UI_text.specs_topspeed)
+	gui.set_text(self.text_specs_speed, G_UI_text.specs_speed)
+	gui.set_text(self.text_specs_range, G_UI_text.specs_range)
+	gui.set_text(self.text_specs_capacity, G_UI_text.specs_capacity)
+	gui.set_text(self.text_specs_emissions, G_UI_text.specs_emissions)
+	gui.set_text(self.text_specs_type, G_UI_text.char_type)
+	gui.set_text(self.text_specs_cat, G_UI_text.char_category)
+	gui.set_text(self.text_specs_config, G_UI_text.char_config)
+    gui.set_text(self.text_specs_fuel, G_UI_text.specs_fuel)
+
+	-- Set purchase info
+	gui.set_text(self.text_units, G_UI_text.demand_units)
+	gui.set_text(self.text_unit_cost, G_UI_text.dev_unitPrice)
+	gui.set_text(self.text_total_cost, G_UI_text.dev_devCostUnits)
+	
+	-- Set button text
+	gui.set_text(self.text_choose_plane, G_UI_text.purch_selectPlane)
+	gui.set_text(self.text_purchase_button, G_UI_text.purch_purchase)
+    msg.post(".", "update_purchase_info")
+end
+
+function final(self)
+	self.druid:final()
+end
+
+function update(self, dt)
+	self.druid:update(dt)
+end
+
+function on_message(self, message_id, message, sender)
+    if message_id == hash("display_plane_specs") then
+        -- Update plane specifications display
+        if message.plane then
+            -- Update plane name and details
+            gui.set_text(self.text_choose_plane, message.plane.planeName or "Unknown Plane")
+            gui.set_text(self.text_specs_weight, G_UI_text.specs_weight .. (message.plane.spec_weight or "--") .. " kg")
+            gui.set_text(self.text_specs_fuel, G_UI_text.specs_fuel .. (message.plane.spec_fuel or "--") .. " kg")
+            gui.set_text(self.text_specs_efficiency, G_UI_text.specs_efficiency .. (message.plane.spec_passEfficiency or "--") .. "%")
+            gui.set_text(self.text_specs_top_speed, G_UI_text.specs_topspeed .. (message.plane.spec_topspeed or "--") .. " km/h")
+            gui.set_text(self.text_specs_speed, G_UI_text.specs_speed .. (message.plane.spec_avgspeed or "--") .. " km/h")
+            gui.set_text(self.text_specs_range, G_UI_text.specs_range .. (message.plane.spec_range or "--") .. " km")
+            gui.set_text(self.text_specs_capacity, G_UI_text.specs_capacity .. (message.plane.spec_passCapacity or "--") .. " pax")
+            gui.set_text(self.text_specs_emissions, G_UI_text.specs_emissions .. (message.plane.spec_emissions or "--") .. " kgCO2/km")
+            gui.set_text(self.text_specs_type, G_UI_text.char_type .. ": " .. (G_planeType_avail[message.plane.planeType].name or "--"))
+            gui.set_text(self.text_specs_cat, G_UI_text.char_category .. ": " .. (G_planeCat_avail[message.plane.planeCat].name or "--"))
+            gui.set_text(self.text_specs_config, G_UI_text.char_config .. ": " .. (G_planeConfig_avail[message.plane.planeConfig].name or "--"))
+            gui.set_text(self.text_specs_fuelType, G_UI_text.char_fueltype .. ": " .. (G_fuelType_avail[message.plane.fuelType].name or "--"))
+
+            -- Store current plane reference and index for purchase operations
+            self.current_plane = message.plane
+            self.current_plane_index = message.index
+
+            unitPrice = message.plane.salePrice
+            msg.post(".", "update_purchase_info")
+        else
+            -- Reset if no plane data provided
+            reset_display1(self)
+            self.current_plane = nil
+            self.current_plane_index = nil
+        end
+
+    elseif message_id == hash("update_units") then
+        sliderUnits = message.units
+        msg.post(".", "update_purchase_info")
+
+    elseif message_id == hash("update_purchase_info") then
+        -- Update purchase information
+
+        self.purchase_units = sliderUnits
+        self.purchase_unit_cost = unitPrice
+        self.purchase_total_cost = unitPrice*sliderUnits
+
+        gui.set_text(self.text_units, "Units: " ..  sliderUnits)
+        gui.set_text(self.text_unit_cost, "Unit Cost: $" .. string.format("%.2f", unitPrice) .. G_UI_text.dev_prodCostUnits)
+        gui.set_text(self.text_total_cost, "Total Cost: $" .. string.format("%.2f", unitPrice*sliderUnits / 1000) .. G_UI_text.dev_devCostUnits)
+        
+        -- Store purchase info for later use
+
+    elseif message_id == hash("set_button_state") then
+        -- Enable/disable purchase button based on affordability or other conditions
+        if message.can_purchase == false then
+            -- Disable purchase button (could change color to indicate it's disabled)
+            gui.set_color(self.text_purchase_button, vmath.vector4(0.5, 0.5, 0.5, 1.0))
+        else
+            -- Enable purchase button
+            gui.set_color(self.text_purchase_button, vmath.vector4(0.0, 0.0, 0.0, 1.0))
+        end
+    elseif message_id == hash("show_plane_selection_popup") then
+        -- Show the popup with plane selection options
+        if message.planes and #message.planes > 0 then
+            show_popup(self, message.planes)
+        else
+            print("No planes available to display in selection popup")
+        end
+    elseif message_id == hash("plane_selected") then
+        -- A plane was selected from the popup, update the display
+        if message.plane then
+            -- Make a display_plane_specs call to ourselves to update the UI
+            msg.post("#", "display_plane_specs", {
+                plane = message.plane,
+                index = message.index
+            })
+            
+            -- You might want to send this to a parent/controller script as well
+            -- e.g.: msg.post("/purchase_controller", "plane_selected", message)
+        end
+    end
+end
+
+function on_input(self, action_id, action)
+	local consumed = self.druid:on_input(action_id, action)
+	if consumed then return true end
+    
+    if action_id == hash("touch") and action.pressed then
+        -- Handle airplane selection from popup (if popup is currently visible)
+        if self.popup_visible and self.popup_buttons then
+            for index, button_data in ipairs(self.popup_buttons) do
+                if gui.pick_node(button_data.node, action.x, action.y) then
+                    -- Plane selected from popup - get the corresponding plane
+                    local selected_plane = S_airplaneAvailabilityList[index]
+                    local selected_index = index
+                    
+                    -- Close the popup
+                    hide_popup(self)
+                    
+                    -- Send message with selected plane information
+                    msg.post("#", "plane_selected", { 
+                        plane = selected_plane,
+                        index = selected_index 
+                    })
+                    
+                    print("Selected plane: " .. selected_plane.planeName .. " (index: " .. selected_index .. ")")
+                    return true
+                end
+            end
+            
+            -- Check if user clicked outside the popup (to close it)
+            if not gui.pick_node(self.popup_container, action.x, action.y) then
+                hide_popup(self)
+                return true
+            end
+        end
+    end
+	
+	return false
+end
+
+-- Helper function to show popup with airplane selection
+function show_popup(self, planes)
+    -- First ensure we don't have an existing popup
+    if self.popup_visible then
+        hide_popup(self)
+    end
+    
+    -- Create container for popup
+    local screen_width = 1366 -- Assuming default screen width, adjust as needed
+    local screen_height = 768 -- Assuming default screen height, adjust as needed
+    local popup_width = 400
+    local popup_height = math.min(500, #planes * 50 + 100) -- Limit height
+    
+    -- Create background for the popup
+    self.popup_container = gui.new_box_node(
+        vmath.vector3(screen_width/2, screen_height/2, 0.9), 
+        vmath.vector3(popup_width, popup_height, 0)
+    )
+    gui.set_id(self.popup_container, "popup_container")
+    gui.set_color(self.popup_container, vmath.vector4(0.2, 0.2, 0.2, 0.9))
+    
+    -- Create title for the popup
+    self.popup_title = gui.new_text_node(
+        vmath.vector3(screen_width/2, screen_height/2 + popup_height/2 - 30, 0.95), 
+        "Select an Airplane"
+    )
+    gui.set_id(self.popup_title, "popup_title")
+    gui.set_font(self.popup_title, "Roboto-Bold")
+    gui.set_color(self.popup_title, vmath.vector4(1, 1, 1, 1))
+    
+    -- Create buttons for each airplane
+    self.popup_buttons = {}
+    local button_width = popup_width - 40
+    local button_height = 40
+    local start_y = screen_height/2 + popup_height/2 - 70
+    
+    for i, plane in ipairs(planes) do
+        local y_pos = start_y - (i-1) * (button_height + 10)
+        
+        -- Create button background
+        local button = gui.new_box_node(
+            vmath.vector3(screen_width/2, y_pos, 0.95),
+            vmath.vector3(button_width, button_height, 0)
+        )
+        gui.set_id(button, "plane_button_" .. i)
+        gui.set_color(button, vmath.vector4(0.3, 0.3, 0.3, 1))
+        
+        -- Create text for the button
+        local button_text = gui.new_text_node(
+            vmath.vector3(screen_width/2, y_pos, 0.96),
+            plane.planeName or "Unnamed Plane " .. i
+        )
+        gui.set_id(button_text, "plane_button_text_" .. i)
+        gui.set_font(button_text, "Roboto-Regular")
+        gui.set_color(button_text, vmath.vector4(1, 1, 1, 1))
+        
+        -- Store button data for input handling
+        table.insert(self.popup_buttons, {
+            node = button,
+            text_node = button_text,
+            plane = plane,
+            index = i
+        })
+    end
+    
+    -- Set flag to indicate popup is visible
+    self.popup_visible = true
+end
+
+-- Helper function to hide popup
+function hide_popup(self)
+    if not self.popup_visible then return end
+    
+    -- Delete all popup nodes
+    gui.delete_node(self.popup_container)
+    gui.delete_node(self.popup_title)
+    
+    for _, button_data in ipairs(self.popup_buttons) do
+        gui.delete_node(button_data.node)
+        gui.delete_node(button_data.text_node)
+    end
+    
+    -- Reset popup data
+    self.popup_container = nil
+    self.popup_title = nil
+    self.popup_buttons = {}
+    self.popup_visible = false
+end
+
+function on_reload(self)
+	self.druid:on_input_interrupt()
+end
