@@ -1,0 +1,62 @@
+name: "TechTreeScreen"
+scale_along_z: 0
+embedded_instances {
+  id: "TechTreeScript"
+  data: "components {\n"
+  "  id: \"TechTreeScreen\"\n"
+  "  component: \"/Collections/Tech Tree/TechTreeScreen.script\"\n"
+  "}\n"
+  ""
+}
+embedded_instances {
+  id: "TechTreeGUIContainer"
+  data: "components {\n"
+  "  id: \"TechTreeGUI\"\n"
+  "  component: \"/Collections/Tech Tree/TechTreeGUI.gui\"\n"
+  "}\n"
+  ""
+}
+embedded_instances {
+  id: "camera"
+  data: "embedded_components {\n"
+  "  id: \"camera\"\n"
+  "  type: \"camera\"\n"
+  "  data: \"aspect_ratio: 1.0\\n"
+  "fov: 0.7854\\n"
+  "near_z: 0.1\\n"
+  "far_z: 1000.0\\n"
+  "auto_aspect_ratio: 1\\n"
+  "\"\n"
+  "}\n"
+  ""
+  position {
+    z: 10.0
+  }
+}
+embedded_instances {
+  id: "ZZ_BGContainer"
+  data: "embedded_components {\n"
+  "  id: \"sprite\"\n"
+  "  type: \"sprite\"\n"
+  "  data: \"default_animation: \\\"airback2\\\"\\n"
+  "material: \\\"/builtins/materials/sprite.material\\\"\\n"
+  "size {\\n"
+  "  x: 626.0\\n"
+  "  y: 470.0\\n"
+  "}\\n"
+  "textures {\\n"
+  "  sampler: \\\"texture_sampler\\\"\\n"
+  "  texture: \\\"/Assets/Altases/bg_atlas.atlas\\\"\\n"
+  "}\\n"
+  "\"\n"
+  "  position {\n"
+  "    y: 1.8\n"
+  "    z: -2.0\n"
+  "  }\n"
+  "  scale {\n"
+  "    x: 0.037\n"
+  "    y: 0.037\n"
+  "  }\n"
+  "}\n"
+  ""
+}

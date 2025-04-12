@@ -1,0 +1,239 @@
+function init(self)
+	-- Initialize tech tree screen
+	msg.post(".", "acquire_input_focus")
+	
+	-- Ensure global variables exist
+	if not G_planeType_avail then G_planeType_avail = {} end
+	if not G_planeCat_avail then G_planeCat_avail = {} end
+	if not G_planeConfig_avail then G_planeConfig_avail = {} end
+	if not G_fuelType_avail then G_fuelType_avail = {} end
+	
+	-- Define research costs for each technology (in millions)
+	self.research_costs = {
+		plane_cat = {
+			-- Small plane is initially available, costs for Medium, Large, Mega
+			[2] = 100,  -- Medium costs 100M
+			[3] = 350,  -- Large costs 350M
+			[4] = 750   -- Mega costs 750M
+		},
+		engine_type = {
+			-- Piston is initially available, costs for Turboprop, Turbojet, Turbofan
+			[2] = 150,  -- Turboprop costs 150M
+			[3] = 400,  -- Turbojet costs 400M
+			[4] = 650   -- Turbofan costs 650M
+		}
+	}
+	
+	-- Define research time for each technology (in seconds)
+	self.research_times = {
+		plane_cat = {
+			[2] = 60,  -- Medium takes 60 seconds
+			[3] = 180, -- Large takes 180 seconds
+			[4] = 300  -- Mega takes 300 seconds
+		},
+		engine_type = {
+			[2] = 90,  -- Turboprop takes 90 seconds
+			[3] = 240, -- Turbojet takes 240 seconds
+			[4] = 360  -- Turbofan takes 360 seconds
+		}
+	}
+	
+	-- Track ongoing research
+	self.ongoing_research = {}
+end
+
+function final(self)
+	-- Release input focus when screen is closed
+	msg.post(".", "release_input_focus")
+end
+
+function update(self, dt)
+	-- Check for completed research
+	if self.ongoing_research and next(self.ongoing_research) then
+		local current_time = G_gameTimer and G_gameTimer.totalSeconds or 0
+		local completed_research = {}
+		
+		for id, research in pairs(self.ongoing_research) do
+			if current_time >= research.complete_at then
+				-- Research completed
+				if research.tech_type == "plane_cat" then
+					G_planeCat_avail[research.tech_index].avail = 1
+				elseif research.tech_type == "engine_type" then
+					G_planeType_avail[research.tech_index].avail = 1
+				end
+				
+				-- Add to list of completed research
+				table.insert(completed_research, id)
+				
+				-- Show notification
+				local tech_name = ""
+				if research.tech_type == "plane_cat" and G_planeCat_avail[research.tech_index] then
+					tech_name = G_planeCat_avail[research.tech_index].name:gsub("_load", "")
+				elseif research.tech_type == "engine_type" and G_planeType_avail[research.tech_index] then
+					tech_name = G_planeType_avail[research.tech_index].name:gsub("_load", "")
+				end
+				
+				-- Post a notification
+				msg.post("ProxyCollection:/ProxyCalls/NotificationBox", "show_notification", {
+					title = "Research Complete",
+					message = tech_name .. " technology has been unlocked!",
+					duration = 5  -- Show for 5 seconds
+				})
+			end
+		end
+		
+		-- Remove completed research
+		for _, id in ipairs(completed_research) do
+			self.ongoing_research[id] = nil
+		end
+		
+		-- Refresh UI if any research completed
+		if #completed_research > 0 then
+			msg.post("/TechTreeGUIContainer#TechTreeGUI", "refresh_buttons")
+		end
+	end
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("tech_unlocked") then
+		-- Handle tech unlock request from GUI
+		local tech_type = message.type
+		local tech_index = message.index
+		
+		-- Check if this tech can be unlocked
+		if can_unlock_tech(self, tech_type, tech_index) then
+			-- Deduct cost
+			local cost = self.research_costs[tech_type][tech_index] or 0
+			G_cashOnHand = G_cashOnHand - cost
+			
+			-- Determine research time
+			local research_time = self.research_times[tech_type][tech_index] or 0
+			
+			if research_time > 0 then
+				-- Start research process
+				local current_time = G_gameTimer and G_gameTimer.totalSeconds or 0
+				local research_id = tech_type .. "_" .. tech_index
+				
+				self.ongoing_research[research_id] = {
+					tech_type = tech_type,
+					tech_index = tech_index,
+					start_time = current_time,
+					complete_at = current_time + research_time
+				}
+				
+				-- Show notification
+				local tech_name = ""
+				if tech_type == "plane_cat" and G_planeCat_avail[tech_index] then
+					tech_name = G_planeCat_avail[tech_index].name:gsub("_load", "")
+				elseif tech_type == "engine_type" and G_planeType_avail[tech_index] then
+					tech_name = G_planeType_avail[tech_index].name:gsub("_load", "")
+				end
+				
+				-- Post a notification
+				msg.post("ProxyCollection:/ProxyCalls/NotificationBox", "show_notification", {
+					title = "Research Started",
+					message = "Researching " .. tech_name .. " technology. Cost: $" .. cost .. "M",
+					duration = 5  -- Show for 5 seconds
+				})
+				
+				-- Refresh UI to show the change
+				msg.post("/TechTreeGUIContainer#TechTreeGUI", "refresh_buttons")
+			else
+				-- Unlock immediately if no research time
+				if tech_type == "plane_cat" then
+					G_planeCat_avail[tech_index].avail = 1
+				elseif tech_type == "engine_type" then
+					G_planeType_avail[tech_index].avail = 1
+				end
+				
+				-- Refresh UI to show the change
+				msg.post("/TechTreeGUIContainer#TechTreeGUI", "refresh_buttons")
+			end
+		else
+			-- Notify the player they can't afford it or prerequisites aren't met
+			msg.post("ProxyCollection:/ProxyCalls/NotificationBox", "show_notification", {
+				title = "Cannot Research",
+				message = "Insufficient funds or prerequisites not met.",
+				duration = 3  -- Show for 3 seconds
+			})
+		end
+	elseif message_id == hash("get_research_status") then
+		-- Prepare research status data
+		local researching_techs = {}
+		
+		-- Convert ongoing_research into a format suitable for the GUI
+		for id, research in pairs(self.ongoing_research or {}) do
+			local button_id = research.tech_type .. "_" .. research.tech_index
+			researching_techs[button_id] = true
+		end
+		
+		-- Send the research status to the GUI
+		msg.post(sender, "research_status", {researching = researching_techs})
+	elseif message_id == hash("get_research_progress") then
+		-- Calculate progress for each ongoing research
+		local progress = {}
+		local current_time = G_gameTimer and G_gameTimer.totalSeconds or 0
+		
+		for id, research in pairs(self.ongoing_research or {}) do
+			local button_id = research.tech_type .. "_" .. research.tech_index
+			local total_time = self.research_times[research.tech_type][research.tech_index]
+			local elapsed_time = current_time - research.start_time
+			
+			if total_time > 0 then
+				progress[button_id] = math.min(elapsed_time / total_time, 1.0)
+			else
+				progress[button_id] = 1.0
+			end
+		end
+		
+		-- Send progress data to the GUI
+		msg.post(sender, "research_progress", {progress = progress})
+	elseif message_id == hash("back_pressed") then
+		-- Return to main screen when back button is pressed
+		msg.post("ProxyCollection:/ProxyCalls", "return_to_main")
+	end
+end
+
+-- Function to check if a tech can be unlocked
+function can_unlock_tech(self, tech_type, tech_index)
+	-- Check prerequisites - previous tech must be unlocked
+	if tech_index > 1 then
+		local is_previous_unlocked = false
+		
+		if tech_type == "plane_cat" and G_planeCat_avail[tech_index - 1] then
+			is_previous_unlocked = G_planeCat_avail[tech_index - 1].avail == 1
+		elseif tech_type == "engine_type" and G_planeType_avail[tech_index - 1] then
+			is_previous_unlocked = G_planeType_avail[tech_index - 1].avail == 1
+		end
+		
+		if not is_previous_unlocked then
+			return false
+		end
+	end
+	
+	-- Check if the player has enough cash
+	local cost = self.research_costs[tech_type][tech_index] or 0
+	if G_cashOnHand < cost then
+		return false
+	end
+	
+	return true
+end
+
+function on_input(self, action_id, action)
+	-- Global input handling for tech tree screen
+	if action_id == hash("touch") and action.pressed then
+		-- Handle touch input if needed
+	elseif action_id == hash("key_esc") and action.pressed then
+		-- ESC key to return to main screen
+		msg.post("ProxyCollection:/ProxyCalls", "return_to_main")
+		return true
+	end
+	return false
+end
+
+function on_reload(self)
+	-- Add reload-handling code here
+	-- Learn more: https://defold.com/manuals/hot-reload/
+	-- Remove this function if not needed
+end

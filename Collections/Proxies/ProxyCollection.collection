@@ -49,6 +49,12 @@ embedded_instances {
   "  data: \"collection: \\\"/Collections/Map Screen/MapScreenCollection.collection\\\"\\n"
   "\"\n"
   "}\n"
+  "embedded_components {\n"
+  "  id: \"TechTreeProxy\"\n"
+  "  type: \"collectionproxy\"\n"
+  "  data: \"collection: \\\"/Collections/Tech Tree/TechTreeScreen.collection\\\"\\n"
+  "\"\n"
+  "}\n"
   ""
 }
 embedded_instances {

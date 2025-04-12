@@ -439,6 +439,10 @@ function on_message(self, message_id, message, sender)
 		show(self, "#LanguageProxy")
 	elseif message_id == hash("run_dev") then
 		show(self, "#DevProxy")
+	elseif message_id == hash("run_techtree") then
+		show(self, "#TechTreeProxy")
+	elseif message_id == hash("return_to_main") then
+		show(self, "#MainScreenProxy")
 	elseif message_id == hash("proxy_loaded") then
 		self.current_proxy = sender
 		msg.post(sender, "enable")

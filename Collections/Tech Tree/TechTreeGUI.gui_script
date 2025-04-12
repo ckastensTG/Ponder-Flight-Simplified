@@ -1,0 +1,357 @@
+local druid = require("druid.druid")
+
+-- Button color configuration
+local BUTTON_COLORS = {
+	available = vmath.vector4(0.2, 0.7, 0.2, 1.0),    -- Green
+	next_available = vmath.vector4(0.7, 0.7, 0.2, 1.0),  -- Yellow
+	researching = vmath.vector4(0.2, 0.5, 0.7, 1.0),  -- Blue
+	locked = vmath.vector4(0.7, 0.2, 0.2, 1.0)        -- Red
+}
+
+-- Text color configuration
+local TEXT_COLORS = {
+	available = vmath.vector4(1, 1, 1, 1),            -- White for available techs
+	next_available = vmath.vector4(1, 1, 1, 1),       -- White for next available techs
+	researching = vmath.vector4(0.8, 0.9, 1, 1),          -- White for researching techs
+	locked = vmath.vector4(0.6, 0.6, 0.6, 1)        -- Light gray for locked techs
+}
+
+-- Research cost and time information
+local TECH_INFO = {
+	plane_cat = {
+		[1] = { cost = 0, time = 0, name = "Small" },
+		[2] = { cost = 100, time = 60, name = "Medium" },
+		[3] = { cost = 350, time = 180, name = "Large" },
+		[4] = { cost = 750, time = 300, name = "Mega" }
+	},
+	engine_type = {
+		[1] = { cost = 0, time = 0, name = "Piston" },
+		[2] = { cost = 150, time = 90, name = "Turboprop" },
+		[3] = { cost = 400, time = 240, name = "Turbojet" },
+		[4] = { cost = 650, time = 360, name = "Turbofan" }
+	}
+}
+
+function init(self)
+	self.druid = druid.new(self)
+--	self.lang = require("localization.lang")
+	self.components = {}
+	
+	-- Set up tech tree
+	self.plane_cat_buttons = {}
+	self.engine_type_buttons = {}
+	self.tech_info_texts = {}
+	self.researching_techs = {}
+	self.research_progress = {}
+	self.progress_bars = {}
+	
+	-- Initialize progress timer
+	self.progress_timer = 0
+	
+	-- Center text for each button
+	for i = 1, 4 do
+		local button_node = gui.get_node("plane_cat_" .. i)
+		local text_node = gui.get_node("plane_cat_" .. i .. "_text")
+		local info_node = gui.get_node("plane_cat_" .. i .. "_info")
+		
+		-- Ensure text is centered
+		local button_size = gui.get_size(button_node)
+		local text_metrics = gui.get_text_metrics_from_node(text_node)
+		local text_scale = gui.get_scale(text_node)
+		local text_pos = vmath.vector3(0, 0, 0)
+		gui.set_position(text_node, text_pos)
+		
+		-- Store info text nodes
+		self.tech_info_texts["plane_cat_" .. i] = info_node
+		
+		-- Store progress bar references if they exist
+		if i > 1 then
+			local progress_node = gui.get_node("plane_cat_" .. i .. "_progress")
+			local progress_bg_node = gui.get_node("plane_cat_" .. i .. "_progress_bg")
+			self.progress_bars["plane_cat_" .. i] = {
+				node = progress_node,
+				bg_node = progress_bg_node,
+				max_width = 160
+			}
+		end
+		
+		-- Create plane category button
+		self.plane_cat_buttons[i] = self.druid:new_button("plane_cat_" .. i, function()
+			on_plane_cat_click(self, i)
+		end)
+	end
+	
+	for i = 1, 4 do
+		local button_node = gui.get_node("engine_type_" .. i)
+		local text_node = gui.get_node("engine_type_" .. i .. "_text")
+		local info_node = gui.get_node("engine_type_" .. i .. "_info")
+		
+		-- Ensure text is centered
+		local button_size = gui.get_size(button_node)
+		local text_metrics = gui.get_text_metrics_from_node(text_node)
+		local text_scale = gui.get_scale(text_node)
+		local text_pos = vmath.vector3(0, 0, 0)
+		gui.set_position(text_node, text_pos)
+		
+		-- Store info text nodes
+		self.tech_info_texts["engine_type_" .. i] = info_node
+		
+		-- Store progress bar references if they exist
+		if i > 1 then
+			local progress_node = gui.get_node("engine_type_" .. i .. "_progress")
+			local progress_bg_node = gui.get_node("engine_type_" .. i .. "_progress_bg")
+			self.progress_bars["engine_type_" .. i] = {
+				node = progress_node,
+				bg_node = progress_bg_node,
+				max_width = 160
+			}
+		end
+		
+		-- Create engine type button
+		self.engine_type_buttons[i] = self.druid:new_button("engine_type_" .. i, function()
+			on_engine_type_click(self, i)
+		end)
+	end
+	
+	-- Setup tech buttons initial state
+	setup_tech_buttons(self)
+	
+	-- Add back button functionality
+	self.druid:new_button("back_button", function()
+		msg.post("/TechTreeScript#TechTreeScreen", "back_pressed")
+	end)
+	
+	msg.post(".", "acquire_input_focus")
+	
+	-- Get research status from TechTreeScreen
+	msg.post("/TechTreeScript#TechTreeScreen", "get_research_status")
+	msg.post("/TechTreeScript#TechTreeScreen", "get_research_progress")
+end
+
+-- Helper function to setup tech buttons based on availability
+function setup_tech_buttons(self)
+	-- Request research status
+	msg.post("/TechTreeScript#TechTreeScreen", "get_research_status")
+	
+	-- Setup plane category buttons
+	if G_planeCat_avail then
+		for i = 1, 4 do
+			if G_planeCat_avail[i] then
+				local button_node = gui.get_node("plane_cat_" .. i)
+				local text_node = gui.get_node("plane_cat_" .. i .. "_text")
+				local info_node = gui.get_node("plane_cat_" .. i .. "_info")
+				local button_id = "plane_cat_" .. i
+				
+				-- Set the name text
+				local button_text = G_planeCat_avail[i].name:gsub("_load", "")
+				gui.set_text(text_node, button_text)
+				
+				-- Check if this tech is unlocked
+				if G_planeCat_avail[i].avail == 1 then
+					-- Unlocked
+					gui.set_color(button_node, BUTTON_COLORS.available)
+					gui.set_color(text_node, TEXT_COLORS.available)
+					gui.set_text(info_node, "Unlocked")
+				elseif self.researching_techs[button_id] then
+					-- Currently researching
+					gui.set_color(button_node, BUTTON_COLORS.researching)
+					gui.set_color(text_node, TEXT_COLORS.researching)
+					gui.set_text(info_node, "Researching...")
+				elseif i == 1 or (G_planeCat_avail[i-1] and G_planeCat_avail[i-1].avail == 1) then
+					-- Next available
+					gui.set_color(button_node, BUTTON_COLORS.next_available)
+					gui.set_color(text_node, TEXT_COLORS.next_available)
+					
+					-- Show cost and time
+					local tech_info = TECH_INFO.plane_cat[i]
+					if tech_info and tech_info.cost > 0 then
+						local minutes = math.floor(tech_info.time / 60)
+						local seconds = tech_info.time % 60
+						local time_text = ""
+						
+						if minutes > 0 then
+							time_text = minutes .. "m " .. seconds .. "s"
+						else
+							time_text = seconds .. "s"
+						end
+						
+						gui.set_text(info_node, "Cost: $" .. tech_info.cost .. "M - " .. time_text)
+					else
+						gui.set_text(info_node, "Available")
+					end
+				else
+					-- Locked
+					gui.set_color(button_node, BUTTON_COLORS.locked)
+					gui.set_color(text_node, TEXT_COLORS.locked)
+					gui.set_text(info_node, "Locked")
+				end
+			end
+		end
+	end
+	
+	-- Setup engine type buttons
+	if G_planeType_avail then
+		for i = 1, 4 do
+			if G_planeType_avail[i] then
+				local button_node = gui.get_node("engine_type_" .. i)
+				local text_node = gui.get_node("engine_type_" .. i .. "_text")
+				local info_node = gui.get_node("engine_type_" .. i .. "_info")
+				local button_id = "engine_type_" .. i
+				
+				-- Set the name text
+				local button_text = G_planeType_avail[i].name:gsub("_load", "")
+				gui.set_text(text_node, button_text)
+				
+				-- Check if this tech is unlocked
+				if G_planeType_avail[i].avail == 1 then
+					-- Unlocked
+					gui.set_color(button_node, BUTTON_COLORS.available)
+					gui.set_color(text_node, TEXT_COLORS.available)
+					gui.set_text(info_node, "Unlocked")
+				elseif self.researching_techs[button_id] then
+					-- Currently researching
+					gui.set_color(button_node, BUTTON_COLORS.researching)
+					gui.set_color(text_node, TEXT_COLORS.researching)
+					gui.set_text(info_node, "Researching...")
+				elseif i == 1 or (G_planeType_avail[i-1] and G_planeType_avail[i-1].avail == 1) then
+					-- Next available
+					gui.set_color(button_node, BUTTON_COLORS.next_available)
+					gui.set_color(text_node, TEXT_COLORS.next_available)
+					
+					-- Show cost and time
+					local tech_info = TECH_INFO.engine_type[i]
+					if tech_info and tech_info.cost > 0 then
+						local minutes = math.floor(tech_info.time / 60)
+						local seconds = tech_info.time % 60
+						local time_text = ""
+						
+						if minutes > 0 then
+							time_text = minutes .. "m " .. seconds .. "s"
+						else
+							time_text = seconds .. "s"
+						end
+						
+						gui.set_text(info_node, "Cost: $" .. tech_info.cost .. "M - " .. time_text)
+					else
+						gui.set_text(info_node, "Available")
+					end
+				else
+					-- Locked
+					gui.set_color(button_node, BUTTON_COLORS.locked)
+					gui.set_color(text_node, TEXT_COLORS.locked)
+					gui.set_text(info_node, "Locked")
+				end
+			end
+		end
+	end
+end
+
+function final(self)
+	self.druid:final()
+end
+
+function update(self, dt)
+	self.druid:update(dt)
+	
+	-- Update progress display
+	self.progress_timer = self.progress_timer + dt
+	if self.progress_timer >= 1.0 then
+		self.progress_timer = 0
+		request_research_progress(self)
+	end
+	
+	-- Update researching tech displays
+	for button_id, progress in pairs(self.research_progress or {}) do
+		local info_node = self.tech_info_texts[button_id]
+		if info_node and self.researching_techs[button_id] then
+			local tech_type, tech_index = parse_button_id(self, button_id)
+			if tech_type and tech_index then
+				local tech_info = TECH_INFO[tech_type][tech_index]
+				if tech_info then
+					local remaining_time = math.ceil(tech_info.time * (1 - progress))
+					local minutes = math.floor(remaining_time / 60)
+					local seconds = remaining_time % 60
+					local time_text = string.format("%02d:%02d remaining", minutes, seconds)
+					gui.set_text(info_node, time_text)
+					
+					-- Update progress bar if one exists for this button
+					if self.progress_bars[button_id] then
+						local bar = self.progress_bars[button_id]
+						local new_width = bar.max_width * progress
+						gui.set_size(bar.node, vmath.vector3(new_width, 10, 0))
+						-- Update position for center alignment without anchor_point
+						local pos = gui.get_position(bar.node)
+						gui.set_position(bar.node, vmath.vector3(-80 + (new_width/2), pos.y, pos.z))
+					end
+				end
+			end
+		end
+	end
+end
+
+function parse_button_id(self, button_id)
+	local tech_type, tech_index = button_id:match("(%w+)_(%d+)")
+	if tech_type and tech_index then
+		return tech_type, tonumber(tech_index)
+	end
+	return nil, nil
+end
+
+function request_research_progress(self)
+	msg.post("/TechTreeScript#TechTreeScreen", "get_research_progress")
+end
+
+function on_message(self, message_id, message, sender)
+	self.druid:on_message(message_id, message)
+	
+	if message_id == hash("refresh_buttons") then
+		setup_tech_buttons(self)
+	elseif message_id == hash("research_status") then
+		self.researching_techs = message.researching or {}
+		setup_tech_buttons(self)
+	elseif message_id == hash("research_progress") then
+		self.research_progress = message.progress or {}
+		
+		-- Update all progress bars based on research progress
+		for button_id, progress in pairs(self.research_progress) do
+			if self.progress_bars[button_id] then
+				local bar = self.progress_bars[button_id]
+				local new_width = bar.max_width * progress
+				gui.set_size(bar.node, vmath.vector3(new_width, 10, 0))
+				-- Update position for center alignment without anchor_point
+				local pos = gui.get_position(bar.node)
+				gui.set_position(bar.node, vmath.vector3(-80 + (new_width/2), pos.y, pos.z))
+			end
+		end
+	end
+end
+
+function on_input(self, action_id, action)
+	return self.druid:on_input(action_id, action)
+end
+
+function on_plane_cat_click(self, index)
+	-- Handle plane category button click
+	if G_planeCat_avail and G_planeCat_avail[index] then
+		if G_planeCat_avail[index].avail == 1 then
+			-- Already unlocked
+			print("Plane category " .. index .. " is already unlocked")
+		else
+			-- Request to unlock this tech
+			msg.post("/TechTreeScript#TechTreeScreen", "tech_unlocked", {type = "plane_cat", index = index})
+		end
+	end
+end
+
+function on_engine_type_click(self, index)
+	-- Handle engine type button click
+	if G_planeType_avail and G_planeType_avail[index] then
+		if G_planeType_avail[index].avail == 1 then
+			-- Already unlocked
+			print("Engine type " .. index .. " is already unlocked")
+		else
+			-- Request to unlock this tech
+			msg.post("/TechTreeScript#TechTreeScreen", "tech_unlocked", {type = "engine_type", index = index})
+		end
+	end
+end
