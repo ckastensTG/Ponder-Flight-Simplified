@@ -24,12 +24,12 @@ nodes {
     x: 0.0
     y: 0.15
     z: 0.3
-    w: 1.0
   }
   type: TYPE_BOX
   id: "background"
   inherit_alpha: true
-  size_mode: SIZE_MODE_MANUAL
+  enabled: false
+  visible: false
 }
 nodes {
   position {
@@ -44,12 +44,10 @@ nodes {
     x: 0.2
     y: 0.2
     z: 0.2
-    w: 1.0
   }
   type: TYPE_BOX
   id: "engine_category_bg"
   inherit_alpha: true
-  size_mode: SIZE_MODE_MANUAL
 }
 nodes {
   position {
@@ -64,12 +62,10 @@ nodes {
     x: 0.2
     y: 0.2
     z: 0.2
-    w: 1.0
   }
   type: TYPE_BOX
   id: "plane_category_bg"
   inherit_alpha: true
-  size_mode: SIZE_MODE_MANUAL
 }
 nodes {
   position {
@@ -79,12 +75,6 @@ nodes {
   size {
     x: 600.0
     y: 75.0
-  }
-  color {
-    x: 1.0
-    y: 1.0
-    z: 1.0
-    w: 1.0
   }
   type: TYPE_TEXT
   text: "Technology Tree"
@@ -101,12 +91,6 @@ nodes {
     x: 200.0
     y: 40.0
   }
-  color {
-    x: 1.0
-    y: 1.0
-    z: 1.0
-    w: 1.0
-  }
   type: TYPE_TEXT
   text: "Plane Categories"
   font: "Roboto-Regular"
@@ -121,12 +105,6 @@ nodes {
   size {
     x: 200.0
     y: 40.0
-  }
-  color {
-    x: 1.0
-    y: 1.0
-    z: 1.0
-    w: 1.0
   }
   type: TYPE_TEXT
   text: "Engine Types"
@@ -156,7 +134,6 @@ nodes {
 }
 nodes {
   position {
-    x: 0.0
     y: 10.0
   }
   size {
@@ -172,8 +149,11 @@ nodes {
 }
 nodes {
   position {
-    x: 0.0
     y: -20.0
+  }
+  scale {
+    x: 0.8
+    y: 0.8
   }
   size {
     x: 160.0
@@ -183,7 +163,6 @@ nodes {
     x: 0.9
     y: 0.9
     z: 0.6
-    w: 1.0
   }
   type: TYPE_TEXT
   text: "Available"
@@ -191,11 +170,6 @@ nodes {
   id: "plane_cat_1_info"
   parent: "plane_cat_1"
   inherit_alpha: true
-  scale {
-    x: 0.8
-    y: 0.8
-    z: 1.0
-  }
 }
 nodes {
   position {
@@ -219,7 +193,6 @@ nodes {
 }
 nodes {
   position {
-    x: 0.0
     y: 10.0
   }
   size {
@@ -235,8 +208,11 @@ nodes {
 }
 nodes {
   position {
-    x: 0.0
     y: -20.0
+  }
+  scale {
+    x: 0.8
+    y: 0.8
   }
   size {
     x: 160.0
@@ -246,7 +222,6 @@ nodes {
     x: 0.9
     y: 0.9
     z: 0.6
-    w: 1.0
   }
   type: TYPE_TEXT
   text: "Cost: 100M - 60s"
@@ -254,15 +229,9 @@ nodes {
   id: "plane_cat_2_info"
   parent: "plane_cat_2"
   inherit_alpha: true
-  scale {
-    x: 0.8
-    y: 0.8
-    z: 1.0
-  }
 }
 nodes {
   position {
-    x: 0.0
     y: -40.0
   }
   size {
@@ -273,7 +242,6 @@ nodes {
     x: 0.3
     y: 0.3
     z: 0.3
-    w: 1.0
   }
   type: TYPE_BOX
   id: "plane_cat_2_progress_bg"
@@ -283,17 +251,14 @@ nodes {
 nodes {
   position {
     x: -80.0
-    y: 0.0
   }
   size {
-    x: 0.0
     y: 10.0
   }
   color {
     x: 0.2
     y: 0.7
     z: 0.3
-    w: 1.0
   }
   type: TYPE_BOX
   id: "plane_cat_2_progress"
@@ -322,7 +287,6 @@ nodes {
 }
 nodes {
   position {
-    x: 0.0
     y: 10.0
   }
   size {
@@ -338,8 +302,11 @@ nodes {
 }
 nodes {
   position {
-    x: 0.0
     y: -20.0
+  }
+  scale {
+    x: 0.8
+    y: 0.8
   }
   size {
     x: 160.0
@@ -349,7 +316,6 @@ nodes {
     x: 0.9
     y: 0.9
     z: 0.6
-    w: 1.0
   }
   type: TYPE_TEXT
   text: "Cost: 350M - 180s"
@@ -357,15 +323,9 @@ nodes {
   id: "plane_cat_3_info"
   parent: "plane_cat_3"
   inherit_alpha: true
-  scale {
-    x: 0.8
-    y: 0.8
-    z: 1.0
-  }
 }
 nodes {
   position {
-    x: 0.0
     y: -40.0
   }
   size {
@@ -376,7 +336,6 @@ nodes {
     x: 0.3
     y: 0.3
     z: 0.3
-    w: 1.0
   }
   type: TYPE_BOX
   id: "plane_cat_3_progress_bg"
@@ -386,17 +345,14 @@ nodes {
 nodes {
   position {
     x: -80.0
-    y: 0.0
   }
   size {
-    x: 0.0
     y: 10.0
   }
   color {
     x: 0.2
     y: 0.7
     z: 0.3
-    w: 1.0
   }
   type: TYPE_BOX
   id: "plane_cat_3_progress"
@@ -425,7 +381,6 @@ nodes {
 }
 nodes {
   position {
-    x: 0.0
     y: 10.0
   }
   size {
@@ -441,8 +396,11 @@ nodes {
 }
 nodes {
   position {
-    x: 0.0
     y: -20.0
+  }
+  scale {
+    x: 0.8
+    y: 0.8
   }
   size {
     x: 160.0
@@ -452,7 +410,6 @@ nodes {
     x: 0.9
     y: 0.9
     z: 0.6
-    w: 1.0
   }
   type: TYPE_TEXT
   text: "Cost: 750M - 300s"
@@ -460,15 +417,9 @@ nodes {
   id: "plane_cat_4_info"
   parent: "plane_cat_4"
   inherit_alpha: true
-  scale {
-    x: 0.8
-    y: 0.8
-    z: 1.0
-  }
 }
 nodes {
   position {
-    x: 0.0
     y: -40.0
   }
   size {
@@ -479,7 +430,6 @@ nodes {
     x: 0.3
     y: 0.3
     z: 0.3
-    w: 1.0
   }
   type: TYPE_BOX
   id: "plane_cat_4_progress_bg"
@@ -489,17 +439,14 @@ nodes {
 nodes {
   position {
     x: -80.0
-    y: 0.0
   }
   size {
-    x: 0.0
     y: 10.0
   }
   color {
     x: 0.2
     y: 0.7
     z: 0.3
-    w: 1.0
   }
   type: TYPE_BOX
   id: "plane_cat_4_progress"
@@ -528,7 +475,6 @@ nodes {
 }
 nodes {
   position {
-    x: 0.0
     y: 10.0
   }
   size {
@@ -544,8 +490,11 @@ nodes {
 }
 nodes {
   position {
-    x: 0.0
     y: -20.0
+  }
+  scale {
+    x: 0.8
+    y: 0.8
   }
   size {
     x: 160.0
@@ -555,7 +504,6 @@ nodes {
     x: 0.9
     y: 0.9
     z: 0.6
-    w: 1.0
   }
   type: TYPE_TEXT
   text: "Available"
@@ -563,11 +511,6 @@ nodes {
   id: "engine_type_1_info"
   parent: "engine_type_1"
   inherit_alpha: true
-  scale {
-    x: 0.8
-    y: 0.8
-    z: 1.0
-  }
 }
 nodes {
   position {
@@ -591,7 +534,6 @@ nodes {
 }
 nodes {
   position {
-    x: 0.0
     y: 10.0
   }
   size {
@@ -607,8 +549,11 @@ nodes {
 }
 nodes {
   position {
-    x: 0.0
     y: -20.0
+  }
+  scale {
+    x: 0.8
+    y: 0.8
   }
   size {
     x: 160.0
@@ -618,7 +563,6 @@ nodes {
     x: 0.9
     y: 0.9
     z: 0.6
-    w: 1.0
   }
   type: TYPE_TEXT
   text: "Cost: 150M - 90s"
@@ -626,15 +570,9 @@ nodes {
   id: "engine_type_2_info"
   parent: "engine_type_2"
   inherit_alpha: true
-  scale {
-    x: 0.8
-    y: 0.8
-    z: 1.0
-  }
 }
 nodes {
   position {
-    x: 0.0
     y: -40.0
   }
   size {
@@ -645,7 +583,6 @@ nodes {
     x: 0.3
     y: 0.3
     z: 0.3
-    w: 1.0
   }
   type: TYPE_BOX
   id: "engine_type_2_progress_bg"
@@ -655,17 +592,14 @@ nodes {
 nodes {
   position {
     x: -80.0
-    y: 0.0
   }
   size {
-    x: 0.0
     y: 10.0
   }
   color {
     x: 0.2
     y: 0.7
     z: 0.3
-    w: 1.0
   }
   type: TYPE_BOX
   id: "engine_type_2_progress"
@@ -694,7 +628,6 @@ nodes {
 }
 nodes {
   position {
-    x: 0.0
     y: 10.0
   }
   size {
@@ -710,8 +643,11 @@ nodes {
 }
 nodes {
   position {
-    x: 0.0
     y: -20.0
+  }
+  scale {
+    x: 0.8
+    y: 0.8
   }
   size {
     x: 160.0
@@ -721,7 +657,6 @@ nodes {
     x: 0.9
     y: 0.9
     z: 0.6
-    w: 1.0
   }
   type: TYPE_TEXT
   text: "Cost: 400M - 240s"
@@ -729,15 +664,9 @@ nodes {
   id: "engine_type_3_info"
   parent: "engine_type_3"
   inherit_alpha: true
-  scale {
-    x: 0.8
-    y: 0.8
-    z: 1.0
-  }
 }
 nodes {
   position {
-    x: 0.0
     y: -40.0
   }
   size {
@@ -748,7 +677,6 @@ nodes {
     x: 0.3
     y: 0.3
     z: 0.3
-    w: 1.0
   }
   type: TYPE_BOX
   id: "engine_type_3_progress_bg"
@@ -758,17 +686,14 @@ nodes {
 nodes {
   position {
     x: -80.0
-    y: 0.0
   }
   size {
-    x: 0.0
     y: 10.0
   }
   color {
     x: 0.2
     y: 0.7
     z: 0.3
-    w: 1.0
   }
   type: TYPE_BOX
   id: "engine_type_3_progress"
@@ -797,7 +722,6 @@ nodes {
 }
 nodes {
   position {
-    x: 0.0
     y: 10.0
   }
   size {
@@ -813,8 +737,11 @@ nodes {
 }
 nodes {
   position {
-    x: 0.0
     y: -20.0
+  }
+  scale {
+    x: 0.8
+    y: 0.8
   }
   size {
     x: 160.0
@@ -824,7 +751,6 @@ nodes {
     x: 0.9
     y: 0.9
     z: 0.6
-    w: 1.0
   }
   type: TYPE_TEXT
   text: "Cost: 650M - 360s"
@@ -832,15 +758,9 @@ nodes {
   id: "engine_type_4_info"
   parent: "engine_type_4"
   inherit_alpha: true
-  scale {
-    x: 0.8
-    y: 0.8
-    z: 1.0
-  }
 }
 nodes {
   position {
-    x: 0.0
     y: -40.0
   }
   size {
@@ -851,7 +771,6 @@ nodes {
     x: 0.3
     y: 0.3
     z: 0.3
-    w: 1.0
   }
   type: TYPE_BOX
   id: "engine_type_4_progress_bg"
@@ -861,17 +780,14 @@ nodes {
 nodes {
   position {
     x: -80.0
-    y: 0.0
   }
   size {
-    x: 0.0
     y: 10.0
   }
   color {
     x: 0.2
     y: 0.7
     z: 0.3
-    w: 1.0
   }
   type: TYPE_BOX
   id: "engine_type_4_progress"
