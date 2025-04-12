@@ -152,7 +152,7 @@ function setup_tech_buttons(self)
 					gui.set_color(button_node, BUTTON_COLORS.available)
 					gui.set_color(text_node, TEXT_COLORS.available)
 					gui.set_text(info_node, "Unlocked")
-				elseif self.researching_techs[button_id] then
+				elseif self.researching_techs and self.researching_techs[button_id] then
 					-- Currently researching
 					gui.set_color(button_node, BUTTON_COLORS.researching)
 					gui.set_color(text_node, TEXT_COLORS.researching)
@@ -208,7 +208,7 @@ function setup_tech_buttons(self)
 					gui.set_color(button_node, BUTTON_COLORS.available)
 					gui.set_color(text_node, TEXT_COLORS.available)
 					gui.set_text(info_node, "Unlocked")
-				elseif self.researching_techs[button_id] then
+				elseif self.researching_techs and self.researching_techs[button_id] then
 					-- Currently researching
 					gui.set_color(button_node, BUTTON_COLORS.researching)
 					gui.set_color(text_node, TEXT_COLORS.researching)
@@ -263,9 +263,9 @@ function update(self, dt)
 	-- Update researching tech displays
 	for button_id, progress in pairs(self.research_progress or {}) do
 		local info_node = self.tech_info_texts[button_id]
-		if info_node and self.researching_techs[button_id] then
+		if info_node and self.researching_techs and self.researching_techs[button_id] then
 			local tech_type, tech_index = parse_button_id(self, button_id)
-			if tech_type and tech_index then
+			if tech_type and tech_index and TECH_INFO[tech_type] and TECH_INFO[tech_type][tech_index] then
 				local tech_info = TECH_INFO[tech_type][tech_index]
 				if tech_info then
 					local remaining_time = math.ceil(tech_info.time * (1 - progress))
@@ -275,13 +275,15 @@ function update(self, dt)
 					gui.set_text(info_node, time_text)
 					
 					-- Update progress bar if one exists for this button
-					if self.progress_bars[button_id] then
+					if self.progress_bars and self.progress_bars[button_id] then
 						local bar = self.progress_bars[button_id]
-						local new_width = bar.max_width * progress
-						gui.set_size(bar.node, vmath.vector3(new_width, 10, 0))
-						-- Update position for center alignment without anchor_point
-						local pos = gui.get_position(bar.node)
-						gui.set_position(bar.node, vmath.vector3(-80 + (new_width/2), pos.y, pos.z))
+						if bar and bar.node then
+							local new_width = bar.max_width * progress
+							gui.set_size(bar.node, vmath.vector3(new_width, 10, 0))
+							-- Update position for center alignment without anchor_point
+							local pos = gui.get_position(bar.node)
+							gui.set_position(bar.node, vmath.vector3(-80 + (new_width/2), pos.y, pos.z))
+						end
 					end
 				end
 			end
@@ -292,7 +294,12 @@ end
 function parse_button_id(self, button_id)
 	local tech_type, tech_index = button_id:match("(%w+)_(%d+)")
 	if tech_type and tech_index then
-		return tech_type, tonumber(tech_index)
+		-- Normalize tech_type to match TECH_INFO keys
+		if tech_type == "plane_cat" or tech_type == "engine_type" then
+			return tech_type, tonumber(tech_index)
+		else
+			print("Warning: Unknown tech_type: " .. tech_type)
+		end
 	end
 	return nil, nil
 end
@@ -314,13 +321,15 @@ function on_message(self, message_id, message, sender)
 		
 		-- Update all progress bars based on research progress
 		for button_id, progress in pairs(self.research_progress) do
-			if self.progress_bars[button_id] then
+			if self.progress_bars and self.progress_bars[button_id] then
 				local bar = self.progress_bars[button_id]
-				local new_width = bar.max_width * progress
-				gui.set_size(bar.node, vmath.vector3(new_width, 10, 0))
-				-- Update position for center alignment without anchor_point
-				local pos = gui.get_position(bar.node)
-				gui.set_position(bar.node, vmath.vector3(-80 + (new_width/2), pos.y, pos.z))
+				if bar and bar.node then
+					local new_width = bar.max_width * progress
+					gui.set_size(bar.node, vmath.vector3(new_width, 10, 0))
+					-- Update position for center alignment without anchor_point
+					local pos = gui.get_position(bar.node)
+					gui.set_position(bar.node, vmath.vector3(-80 + (new_width/2), pos.y, pos.z))
+				end
 			end
 		end
 	end

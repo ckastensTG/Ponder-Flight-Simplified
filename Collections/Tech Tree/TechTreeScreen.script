@@ -8,6 +8,9 @@ function init(self)
 	if not G_planeConfig_avail then G_planeConfig_avail = {} end
 	if not G_fuelType_avail then G_fuelType_avail = {} end
 	
+	-- Ensure global research queue exists
+	if not G_researchQueue then G_researchQueue = {} end
+	
 	-- Define research costs for each technology (in millions)
 	self.research_costs = {
 		plane_cat = {
@@ -37,9 +40,6 @@ function init(self)
 			[4] = 360  -- Turbofan takes 360 seconds
 		}
 	}
-	
-	-- Track ongoing research
-	self.ongoing_research = {}
 end
 
 function final(self)
@@ -49,11 +49,11 @@ end
 
 function update(self, dt)
 	-- Check for completed research
-	if self.ongoing_research and next(self.ongoing_research) then
+	if G_researchQueue and next(G_researchQueue) then
 		local current_time = G_gameTimer and G_gameTimer.totalSeconds or 0
 		local completed_research = {}
 		
-		for id, research in pairs(self.ongoing_research) do
+		for id, research in pairs(G_researchQueue) do
 			if current_time >= research.complete_at then
 				-- Research completed
 				if research.tech_type == "plane_cat" then
@@ -84,12 +84,15 @@ function update(self, dt)
 		
 		-- Remove completed research
 		for _, id in ipairs(completed_research) do
-			self.ongoing_research[id] = nil
+			G_researchQueue[id] = nil
 		end
 		
 		-- Refresh UI if any research completed
 		if #completed_research > 0 then
-			msg.post("/TechTreeGUIContainer#TechTreeGUI", "refresh_buttons")
+			-- Only send refresh message if we're on the tech tree screen
+			if go.exists("/TechTreeGUIContainer") then
+				msg.post("/TechTreeGUIContainer#TechTreeGUI", "refresh_buttons")
+			end
 		end
 	end
 end
@@ -114,11 +117,12 @@ function on_message(self, message_id, message, sender)
 				local current_time = G_gameTimer and G_gameTimer.totalSeconds or 0
 				local research_id = tech_type .. "_" .. tech_index
 				
-				self.ongoing_research[research_id] = {
+				G_researchQueue[research_id] = {
 					tech_type = tech_type,
 					tech_index = tech_index,
 					start_time = current_time,
-					complete_at = current_time + research_time
+					complete_at = current_time + research_time,
+					team_id = G_teamId -- Store which team is doing this research
 				}
 				
 				-- Show notification
@@ -161,8 +165,8 @@ function on_message(self, message_id, message, sender)
 		-- Prepare research status data
 		local researching_techs = {}
 		
-		-- Convert ongoing_research into a format suitable for the GUI
-		for id, research in pairs(self.ongoing_research or {}) do
+		-- Convert G_researchQueue into a format suitable for the GUI
+		for id, research in pairs(G_researchQueue or {}) do
 			local button_id = research.tech_type .. "_" .. research.tech_index
 			researching_techs[button_id] = true
 		end
@@ -174,7 +178,7 @@ function on_message(self, message_id, message, sender)
 		local progress = {}
 		local current_time = G_gameTimer and G_gameTimer.totalSeconds or 0
 		
-		for id, research in pairs(self.ongoing_research or {}) do
+		for id, research in pairs(G_researchQueue or {}) do
 			local button_id = research.tech_type .. "_" .. research.tech_index
 			local total_time = self.research_times[research.tech_type][research.tech_index]
 			local elapsed_time = current_time - research.start_time

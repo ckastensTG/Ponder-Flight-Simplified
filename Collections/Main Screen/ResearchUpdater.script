@@ -1,0 +1,17 @@
+function init(self)
+	-- Note: This script is no longer needed as research updates 
+	-- are now handled centrally in ProxyOrganizer.script
+	-- Left here for reference or future use
+end
+
+function final(self)
+	-- Clean up if needed
+end
+
+function update(self, dt)
+	-- Research updates now handled in ProxyOrganizer.script
+end
+
+function on_message(self, message_id, message, sender)
+	-- Handle messages if needed
+end 

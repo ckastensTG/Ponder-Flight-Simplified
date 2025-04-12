@@ -25,6 +25,7 @@
     "files.associations": {
         "*.script": "lua",
         "*.gui_script": "lua",
+        "*.nani": "naniscript",
         "*.render_script": "lua",
         "*.editor_script": "lua",
         "*.lua_": "lua",

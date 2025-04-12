@@ -77,6 +77,7 @@ G_fuelType_avail = {}
 
 GDev_devQueue = {}
 GDev_fleet = {}
+G_researchQueue = {}
 
 GAirline_fleet = {}
 GAirline_routes = {}
@@ -111,6 +112,11 @@ function set_globals(teamId, teamType)
 
 	if teamType == "prod" then
 		-- Copy the arrays from componentSpecs, maintaining the table structure
+		G_planeType_avail = {}
+		G_planeCat_avail = {}
+		G_planeConfig_avail = {}
+		G_fuelType_avail = {}
+		
 		for i, spec in ipairs(componentSpecs.planeType) do
 			G_planeType_avail[i] = {
 				name = spec.name,
@@ -206,10 +212,42 @@ function swap_team(teamId, teamType)
 
 	print("teamType: " .. teamType)
 
-	S_teamData[G_teamId].planeType_avail = G_planeType_avail
-	S_teamData[G_teamId].planeCat_avail = G_planeCat_avail
-	S_teamData[G_teamId].planeConfig_avail = G_planeConfig_avail
-	S_teamData[G_teamId].fuelType_avail = G_fuelType_avail
+	-- Make deep copies of the availability data
+	S_teamData[G_teamId].planeType_avail = {}
+	for i, data in ipairs(G_planeType_avail) do
+		local copy = {}
+		for k, v in pairs(data) do
+			copy[k] = v
+		end
+		S_teamData[G_teamId].planeType_avail[i] = copy
+	end
+	
+	S_teamData[G_teamId].planeCat_avail = {}
+	for i, data in ipairs(G_planeCat_avail) do
+		local copy = {}
+		for k, v in pairs(data) do
+			copy[k] = v
+		end
+		S_teamData[G_teamId].planeCat_avail[i] = copy
+	end
+	
+	S_teamData[G_teamId].planeConfig_avail = {}
+	for i, data in ipairs(G_planeConfig_avail) do
+		local copy = {}
+		for k, v in pairs(data) do
+			copy[k] = v
+		end
+		S_teamData[G_teamId].planeConfig_avail[i] = copy
+	end
+	
+	S_teamData[G_teamId].fuelType_avail = {}
+	for i, data in ipairs(G_fuelType_avail) do
+		local copy = {}
+		for k, v in pairs(data) do
+			copy[k] = v
+		end
+		S_teamData[G_teamId].fuelType_avail[i] = copy
+	end
 
 	--[[
 	if GAirline_routes[1] then
@@ -223,6 +261,7 @@ function swap_team(teamId, teamType)
 	if teamType == "prod" then
 		S_teamData[G_teamId].devQueue = GDev_devQueue
 		S_teamData[G_teamId].fleet = GDev_fleet
+		S_teamData[G_teamId].researchQueue = G_researchQueue
 	elseif teamType == "airline" then
 		S_teamData[G_teamId].airfleet = GAirline_fleet
 		S_teamData[G_teamId].routes = GAirline_routes
@@ -236,15 +275,59 @@ function swap_team(teamId, teamType)
 	
 	-- Load the new team's data
 	if S_teamData[teamId] then
+		-- Load basic data
 		G_currentPlane = S_teamData[teamId].currentPlane or {}
 		G_cashOnHand = S_teamData[teamId].cashOnHand or 2500
-		G_planeType_avail = S_teamData[teamId].planeType_avail or {}
-		G_planeCat_avail = S_teamData[teamId].planeCat_avail or {}
-		G_planeConfig_avail = S_teamData[teamId].planeConfig_avail or {}
-		G_fuelType_avail = S_teamData[teamId].fuelType_avail or {}
+		
+		-- Create deep copies of the availability data
+		G_planeType_avail = {}
+		if S_teamData[teamId].planeType_avail then
+			for i, data in ipairs(S_teamData[teamId].planeType_avail) do
+				local copy = {}
+				for k, v in pairs(data) do
+					copy[k] = v
+				end
+				G_planeType_avail[i] = copy
+			end
+		end
+		
+		G_planeCat_avail = {}
+		if S_teamData[teamId].planeCat_avail then
+			for i, data in ipairs(S_teamData[teamId].planeCat_avail) do
+				local copy = {}
+				for k, v in pairs(data) do
+					copy[k] = v
+				end
+				G_planeCat_avail[i] = copy
+			end
+		end
+		
+		G_planeConfig_avail = {}
+		if S_teamData[teamId].planeConfig_avail then
+			for i, data in ipairs(S_teamData[teamId].planeConfig_avail) do
+				local copy = {}
+				for k, v in pairs(data) do
+					copy[k] = v
+				end
+				G_planeConfig_avail[i] = copy
+			end
+		end
+		
+		G_fuelType_avail = {}
+		if S_teamData[teamId].fuelType_avail then
+			for i, data in ipairs(S_teamData[teamId].fuelType_avail) do
+				local copy = {}
+				for k, v in pairs(data) do
+					copy[k] = v
+				end
+				G_fuelType_avail[i] = copy
+			end
+		end
+
 		if teamType == "prod" then
 			GDev_devQueue = S_teamData[teamId].devQueue or {}
 			GDev_fleet = S_teamData[teamId].fleet or {}
+			G_researchQueue = S_teamData[teamId].researchQueue or {}
 		elseif teamType == "airline" then
 			print("teamId: " .. teamId)
 			GAirline_fleet = S_teamData[teamId].airfleet or {}
@@ -283,6 +366,7 @@ function swap_team(teamId, teamType)
 		G_cashOnHand = 2500
 		GDev_devQueue = {}
 		GDev_fleet = {}
+		G_researchQueue = {}
 	end
 
 	--[[
@@ -404,6 +488,91 @@ function update(self, dt)
 			
 			-- Remove the plane from the queue
 			table.remove(GDev_devQueue, planes_to_remove[i])
+		end
+	end
+
+	-- Check for completed research in global research queue
+	if G_researchQueue and next(G_researchQueue) then
+		local current_time = G_gameTimer.totalSeconds
+		local completed_research = {}
+		
+		for id, research in pairs(G_researchQueue) do
+			if current_time >= research.complete_at then
+				-- Research completed - only unlock for the team that initiated it
+				local team_id = research.team_id or G_teamId
+				
+				-- Make sure team data exists
+				if not S_teamData[team_id] then
+					S_teamData[team_id] = {}
+				end
+				
+				-- We need to ensure the team's data includes availability info
+				if not S_teamData[team_id].planeCat_avail then
+					S_teamData[team_id].planeCat_avail = {}
+					-- Make a deep copy to prevent shared references
+					for i, data in ipairs(G_planeCat_avail) do
+						local copy = {}
+						for k, v in pairs(data) do
+							copy[k] = v
+						end
+						S_teamData[team_id].planeCat_avail[i] = copy
+					end
+				end
+				
+				if not S_teamData[team_id].planeType_avail then
+					S_teamData[team_id].planeType_avail = {}
+					-- Make a deep copy to prevent shared references
+					for i, data in ipairs(G_planeType_avail) do
+						local copy = {}
+						for k, v in pairs(data) do
+							copy[k] = v
+						end
+						S_teamData[team_id].planeType_avail[i] = copy
+					end
+				end
+				
+				-- Update the tech availability for the specific team
+				if research.tech_type == "plane_cat" then
+					S_teamData[team_id].planeCat_avail[research.tech_index].avail = 1
+					
+					-- If this is the current team, update the global variables too
+					if team_id == G_teamId then
+						G_planeCat_avail[research.tech_index].avail = 1
+					end
+				elseif research.tech_type == "engine_type" then
+					S_teamData[team_id].planeType_avail[research.tech_index].avail = 1
+					
+					-- If this is the current team, update the global variables too
+					if team_id == G_teamId then
+						G_planeType_avail[research.tech_index].avail = 1
+					end
+				end
+				
+				-- Add to list of completed research
+				table.insert(completed_research, id)
+				
+				-- Show notification only if it's the current team's research
+				if team_id == G_teamId then
+					local tech_name = ""
+					if research.tech_type == "plane_cat" and G_planeCat_avail[research.tech_index] then
+						tech_name = G_planeCat_avail[research.tech_index].name:gsub("_load", "")
+					elseif research.tech_type == "engine_type" and G_planeType_avail[research.tech_index] then
+						tech_name = G_planeType_avail[research.tech_index].name:gsub("_load", "")
+					end
+					
+					-- Post a notification
+					msg.post("ProxyCollection:/ProxyCalls/NotificationBox", "show_notification", {
+						title = "Research Complete",
+						message = tech_name .. " technology has been unlocked!",
+						duration = 5  -- Show for 5 seconds
+					})
+				end
+			end
+		end
+		
+		-- Remove completed research
+		for _, id in ipairs(completed_research) do
+			G_researchQueue[id] = nil
 		end
 	end
 
