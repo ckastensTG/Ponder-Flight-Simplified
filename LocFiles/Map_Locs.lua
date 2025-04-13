@@ -1,7 +1,9 @@
 -- All possible airport-to-airport connections
 local cities = {
     "Littleton", "Littlesis", "Jackville", "Bigton", "Kastenville", 
-    "Dangen", "Mono", "Kuma", "Gristown", "Mayfield", "Bristol"
+    "Dangen", "Mono", "Kuma", "Gristown", "Mayfield", "Bristol",
+    "Redrock", "Oakvale", "Silverport", "Westfield", "Riverdale", 
+    "Pinehaven", "Meadowbrook", "Sunnydale", "Frostpeak"
 }
 
 local city_data = {
@@ -15,7 +17,16 @@ local city_data = {
     ["Kuma"] = {pos = {1280,360}, category = 1},
     ["Gristown"] = {pos = {1000,500}, category = 3},
     ["Mayfield"] = {pos = {400,600}, category = 3},
-    ["Bristol"] = {pos = {650,200}, category = 3}
+    ["Bristol"] = {pos = {650,200}, category = 3},
+    ["Redrock"] = {pos = {820,450}, category = 2},
+    ["Oakvale"] = {pos = {550,350}, category = 1},
+    ["Silverport"] = {pos = {900,150}, category = 3},
+    ["Westfield"] = {pos = {750,620}, category = 2},
+    ["Riverdale"] = {pos = {150,180}, category = 1},
+    ["Pinehaven"] = {pos = {1100,600}, category = 2},
+    ["Meadowbrook"] = {pos = {480,180}, category = 1},
+    ["Sunnydale"] = {pos = {950,400}, category = 3},
+    ["Frostpeak"] = {pos = {300,100}, category = 2}
 }
 
 -- Function to calculate base passenger demand based on airport categories and distance
@@ -146,6 +157,15 @@ return {
         {name = "Gristown", pos = {1000,500}, category = 3},
         {name = "Mayfield", pos = {400,600}, category = 3},
         {name = "Bristol", pos = {650,200}, category = 3},
+        {name = "Redrock", pos = {820,450}, category = 2},
+        {name = "Oakvale", pos = {550,350}, category = 1},
+        {name = "Silverport", pos = {900,150}, category = 3},
+        {name = "Westfield", pos = {750,620}, category = 2},
+        {name = "Riverdale", pos = {150,180}, category = 1},
+        {name = "Pinehaven", pos = {1100,600}, category = 2},
+        {name = "Meadowbrook", pos = {480,180}, category = 1},
+        {name = "Sunnydale", pos = {950,400}, category = 3},
+        {name = "Frostpeak", pos = {300,100}, category = 2},
     },
     routes = routes
 }

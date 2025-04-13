@@ -20,15 +20,15 @@ local TEXT_COLORS = {
 local TECH_INFO = {
 	plane_cat = {
 		[1] = { cost = 0, time = 0, name = "Small" },
-		[2] = { cost = 100, time = 60, name = "Medium" },
-		[3] = { cost = 350, time = 180, name = "Large" },
-		[4] = { cost = 750, time = 300, name = "Mega" }
+		[2] = { cost = 500, time = 30, name = "Medium" },
+		[3] = { cost = 1750, time = 90, name = "Large" },
+		[4] = { cost = 3750, time = 150, name = "Mega" }
 	},
 	engine_type = {
 		[1] = { cost = 0, time = 0, name = "Piston" },
-		[2] = { cost = 150, time = 90, name = "Turboprop" },
-		[3] = { cost = 400, time = 240, name = "Turbojet" },
-		[4] = { cost = 650, time = 360, name = "Turbofan" }
+		[2] = { cost = 750, time = 45, name = "Turboprop" },
+		[3] = { cost = 2000, time = 120, name = "Turbojet" },
+		[4] = { cost = 3250, time = 180, name = "Turbofan" }
 	}
 }
 

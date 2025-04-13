@@ -15,29 +15,29 @@ function init(self)
 	self.research_costs = {
 		plane_cat = {
 			-- Small plane is initially available, costs for Medium, Large, Mega
-			[2] = 100,  -- Medium costs 100M
-			[3] = 350,  -- Large costs 350M
-			[4] = 750   -- Mega costs 750M
+			[2] = 500,  -- Medium costs 500M
+			[3] = 1750, -- Large costs 1750M
+			[4] = 3750  -- Mega costs 3750M
 		},
 		engine_type = {
 			-- Piston is initially available, costs for Turboprop, Turbojet, Turbofan
-			[2] = 150,  -- Turboprop costs 150M
-			[3] = 400,  -- Turbojet costs 400M
-			[4] = 650   -- Turbofan costs 650M
+			[2] = 750,  -- Turboprop costs 750M
+			[3] = 2000, -- Turbojet costs 2000M
+			[4] = 3250  -- Turbofan costs 3250M
 		}
 	}
 	
 	-- Define research time for each technology (in seconds)
 	self.research_times = {
 		plane_cat = {
-			[2] = 60,  -- Medium takes 60 seconds
-			[3] = 180, -- Large takes 180 seconds
-			[4] = 300  -- Mega takes 300 seconds
+			[2] = 30,  -- Medium takes 30 seconds
+			[3] = 90,  -- Large takes 90 seconds
+			[4] = 150  -- Mega takes 150 seconds
 		},
 		engine_type = {
-			[2] = 90,  -- Turboprop takes 90 seconds
-			[3] = 240, -- Turbojet takes 240 seconds
-			[4] = 360  -- Turbofan takes 360 seconds
+			[2] = 45,  -- Turboprop takes 45 seconds
+			[3] = 120, -- Turbojet takes 120 seconds
+			[4] = 180  -- Turbofan takes 180 seconds
 		}
 	}
 end
