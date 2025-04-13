@@ -1,6 +1,8 @@
 function init(self)
 	-- Load the city locations from the data file
-	self.locations = require("LocFiles.Map_Locs")
+	local map_data = require("LocFiles.Map_Locs")
+	self.locations = map_data.cities
+	self.routes_data = map_data.routes
 	self.dots = {}
 	self.selected_dot = nil
 	self.second_selected_dot = nil  -- For tracking the second selected city
@@ -340,13 +342,37 @@ function assign_plane_to_route(self, plane_data)
 		return
 	end
 	
+	-- Find the route in our routes data
+	local route_info = nil
+	for _, route in ipairs(self.routes_data) do
+		if (route.from == self.current_route.city1.location.name and route.to == self.current_route.city2.location.name) or
+		   (route.from == self.current_route.city2.location.name and route.to == self.current_route.city1.location.name) then
+			route_info = route
+			break
+		end
+	end
+	
+	-- Get current player info (use G_teamId which is the correct global variable)
+	local current_player_id = G_teamId -- This is the correct variable
+	local current_player_name = "Team " .. current_player_id -- No need for G_playerNames
+	
+	-- Get plane passenger capacity (example: using plane data or a lookup)
+	local passenger_capacity = plane_data.plane.spec_passCapacity or 0
+	
 	-- Create route entry for the airline's routes
 	local new_route = {
 		from = self.current_route.city1.location,
 		to = self.current_route.city2.location,
 		distance = self.current_route.distance,
 		plane_index = plane_data.index,
-		plane_name = plane_data.plane.planeName
+		plane_name = plane_data.plane.planeName,
+		route_id = route_info and route_info.id or nil,
+		base_passenger_demand = route_info and route_info.base_passenger_demand or 0,
+		current_passenger_demand = route_info and route_info.current_passenger_demand or 0,
+		ticket_price = route_info and route_info.ticket_price or 0,
+		player_id = current_player_id,
+		player_name = current_player_name,
+		passenger_capacity = passenger_capacity
 	}
 	
 	-- Initialize the routes table if it doesn't exist
@@ -370,6 +396,70 @@ function assign_plane_to_route(self, plane_data)
 	
 	table.insert(GAirline_routelines, route_line_data)
 	
+	-- Update the route info in Map_Locs to track players and planes
+	if route_info then
+		-- Initialize player_planes if it doesn't exist
+		if not route_info.player_planes then
+			route_info.player_planes = {}
+		end
+		
+		-- Check if player already has planes on this route
+		local player_entry = nil
+		for _, entry in ipairs(route_info.player_planes) do
+			if entry.player_id == current_player_id then
+				player_entry = entry
+				break
+			end
+		end
+		
+		-- If player doesn't have an entry yet, create one
+		if not player_entry then
+			player_entry = {
+				player_id = current_player_id,
+				player_name = current_player_name,
+				planes = {}
+			}
+			table.insert(route_info.player_planes, player_entry)
+		end
+		
+		-- Check if player already has this plane type on the route
+		local plane_entry = nil
+		for _, entry in ipairs(player_entry.planes) do
+			if entry.plane_index == plane_data.index then
+				plane_entry = entry
+				break
+			end
+		end
+		
+		-- If plane doesn't exist yet for this player, add it
+		if not plane_entry then
+			plane_entry = {
+				plane_index = plane_data.index,
+				plane_name = plane_data.plane.planeName,
+				count = 0,
+				passenger_capacity = passenger_capacity
+			}
+			table.insert(player_entry.planes, plane_entry)
+		end
+		
+		-- Increment plane count
+		plane_entry.count = plane_entry.count + 1
+		
+		-- Calculate total capacity for this player on this route
+		local total_capacity = 0
+		for _, plane in ipairs(player_entry.planes) do
+			total_capacity = total_capacity + (plane.count * plane.passenger_capacity)
+		end
+		player_entry.total_capacity = total_capacity
+		
+		-- Update total passenger capacity for the route
+		local route_total_capacity = 0
+		for _, player in ipairs(route_info.player_planes) do
+			route_total_capacity = route_total_capacity + player.total_capacity
+		end
+		route_info.total_passenger_capacity = route_total_capacity
+	end
+	
 	-- Reduce plane count in fleet (assume at least 1 available)
 	for i, fleet_entry in ipairs(GAirline_fleet) do
 		if fleet_entry[1] == plane_data.index then
@@ -387,7 +477,10 @@ function assign_plane_to_route(self, plane_data)
 	
 	-- Show confirmation message
 	print("Route created: " .. self.current_route.city1.location.name .. " to " .. 
-		self.current_route.city2.location.name .. " using " .. plane_data.plane.planeName)
+		self.current_route.city2.location.name .. " using " .. plane_data.plane.planeName .. 
+		" (Daily demand: " .. (route_info and route_info.current_passenger_demand or 0) .. 
+		" passengers, Ticket price: $" .. (route_info and route_info.ticket_price or 0) .. 
+		", Passenger capacity: " .. passenger_capacity .. ")")
 	
 	-- Draw the new route line
 	draw_route_line(self, route_line_data.pos1, route_line_data.pos2)
@@ -443,18 +536,32 @@ function show_route_popup(self, city1, city2)
 		hide_route_popup(self)
 	end
 	
-	-- Calculate route information
-	local distance = calculate_distance(city1.location.pos, city2.location.pos)
+	-- Find the route in our routes data
+	local route_info = nil
+	for _, route in ipairs(self.routes_data) do
+		if (route.from == city1.location.name and route.to == city2.location.name) or
+		   (route.from == city2.location.name and route.to == city1.location.name) then
+			route_info = route
+			break
+		end
+	end
+	
+	-- Use pre-calculated data if available, otherwise calculate on the fly
+	local distance = route_info and route_info.distance or calculate_distance(city1.location.pos, city2.location.pos)
 	local valid_categories = get_valid_plane_categories(city1.location.category, city2.location.category)
 	
 	-- Find eligible planes from fleet
 	local eligible_planes = get_eligible_fleet_planes(self, valid_categories, distance)
 	
-	-- Create container for popup
+	-- Create container for popup - now double width
 	local screen_width = 1366  -- Adjust as needed
 	local screen_height = 768  -- Adjust as needed
-	local popup_width = 500
-	local popup_height = 400
+	local popup_width = 1000   -- Doubled from 500 to 1000
+	local popup_height = 550
+	
+	-- Define column positions
+	local col1_x = screen_width/2 - 250  -- Left column x position
+	local col2_x = screen_width/2 + 250  -- Right column x position
 	
 	-- Create popup background
 	self.popup_container = gui.new_box_node(
@@ -464,7 +571,7 @@ function show_route_popup(self, city1, city2)
 	gui.set_id(self.popup_container, "route_popup_container")
 	gui.set_color(self.popup_container, vmath.vector4(0.2, 0.2, 0.2, 0.9))
 	
-	-- Create popup title
+	-- Create popup title (centered across both columns)
 	self.popup_title = gui.new_text_node(
 		vmath.vector3(screen_width/2, screen_height/2 + popup_height/2 - 30, 0.95),
 		"Route: " .. city1.location.name .. " to " .. city2.location.name
@@ -473,10 +580,17 @@ function show_route_popup(self, city1, city2)
 	gui.set_font(self.popup_title, "system_font")
 	gui.set_color(self.popup_title, vmath.vector4(1, 1, 1, 1))
 	
-	-- Create distance text
+	-- LEFT COLUMN ELEMENTS
+	
+	-- Create distance text with route ID if available
+	local distance_text = "Distance: " .. string.format("%.0f", distance) .. " km"
+	if route_info then
+		distance_text = distance_text .. " (Route ID: " .. route_info.id .. ")"
+	end
+	
 	self.popup_distance = gui.new_text_node(
-		vmath.vector3(screen_width/2, screen_height/2 + popup_height/2 - 70, 0.95),
-		"Distance: " .. string.format("%.0f", distance) .. " km"
+		vmath.vector3(col1_x, screen_height/2 + popup_height/2 - 70, 0.95),
+		distance_text
 	)
 	gui.set_id(self.popup_distance, "route_popup_distance")
 	gui.set_font(self.popup_distance, "system_font")
@@ -484,13 +598,126 @@ function show_route_popup(self, city1, city2)
 	
 	-- Create airport categories text
 	self.popup_airports = gui.new_text_node(
-		vmath.vector3(screen_width/2, screen_height/2 + popup_height/2 - 110, 0.95),
+		vmath.vector3(col1_x, screen_height/2 + popup_height/2 - 110, 0.95),
 		"Airport Categories: " .. city1.location.name .. " (Cat " .. city1.location.category .. ") - " .. 
 		city2.location.name .. " (Cat " .. city2.location.category .. ")"
 	)
 	gui.set_id(self.popup_airports, "route_popup_airports")
 	gui.set_font(self.popup_airports, "system_font")
 	gui.set_color(self.popup_airports, vmath.vector4(1, 1, 1, 1))
+	
+	-- Create passenger demand text
+	local demand_text = "No passenger demand data available"
+	if route_info and route_info.base_passenger_demand then
+		demand_text = "Daily Passenger Demand: " .. route_info.current_passenger_demand
+		
+		-- If current demand differs from base demand, show both
+		if route_info.current_passenger_demand ~= route_info.base_passenger_demand then
+			demand_text = demand_text .. " (Base: " .. route_info.base_passenger_demand .. ")"
+		end
+	end
+	
+	self.popup_demand = gui.new_text_node(
+		vmath.vector3(col1_x, screen_height/2 + popup_height/2 - 150, 0.95),
+		demand_text
+	)
+	gui.set_id(self.popup_demand, "route_popup_demand")
+	gui.set_font(self.popup_demand, "system_font")
+	gui.set_color(self.popup_demand, vmath.vector4(1, 1, 1, 1))
+	
+	-- Create ticket price text
+	local price_text = "No ticket price data available"
+	if route_info and route_info.ticket_price then
+		price_text = "Ticket Price: $" .. route_info.ticket_price
+	end
+	
+	self.popup_price = gui.new_text_node(
+		vmath.vector3(col1_x, screen_height/2 + popup_height/2 - 190, 0.95),
+		price_text
+	)
+	gui.set_id(self.popup_price, "route_popup_price")
+	gui.set_font(self.popup_price, "system_font")
+	gui.set_color(self.popup_price, vmath.vector4(1, 1, 1, 1))
+	
+	-- Create player planes information
+	local player_text = "No planes servicing this route"
+	local total_capacity = 0
+	
+	if route_info and route_info.player_planes and #route_info.player_planes > 0 then
+		player_text = "Planes On This Route:"
+		self.popup_player_info = {}
+		
+		-- Create player info text heading
+		local player_info_heading = gui.new_text_node(
+			vmath.vector3(col1_x, screen_height/2 + popup_height/2 - 230, 0.95),
+			player_text
+		)
+		gui.set_id(player_info_heading, "route_popup_player_heading")
+		gui.set_font(player_info_heading, "system_font")
+		gui.set_color(player_info_heading, vmath.vector4(1, 1, 1, 1))
+		table.insert(self.popup_player_info, player_info_heading)
+		
+		-- List each player and their planes
+		local ypos = screen_height/2 + popup_height/2 - 260
+		local spacing = 25
+		
+		for i, player in ipairs(route_info.player_planes) do
+			-- Player name and total capacity
+			local player_node = gui.new_text_node(
+				vmath.vector3(col1_x, ypos, 0.95),
+				player.player_name .. " - Total Capacity: " .. player.total_capacity .. " passengers"
+			)
+			gui.set_id(player_node, "player_info_" .. i)
+			gui.set_font(player_node, "system_font")
+			gui.set_color(player_node, vmath.vector4(0.8, 0.8, 1, 1))
+			table.insert(self.popup_player_info, player_node)
+			
+			ypos = ypos - spacing
+			
+			-- List each plane type for this player
+			for j, plane in ipairs(player.planes) do
+				local plane_node = gui.new_text_node(
+					vmath.vector3(col1_x, ypos, 0.95),
+					"   " .. plane.plane_name .. " (x" .. plane.count .. 
+					") - Capacity: " .. plane.passenger_capacity .. " per plane"
+				)
+				gui.set_id(plane_node, "player_" .. i .. "_plane_" .. j)
+				gui.set_font(plane_node, "system_font")
+				gui.set_color(plane_node, vmath.vector4(0.7, 0.7, 0.7, 1))
+				table.insert(self.popup_player_info, plane_node)
+				
+				ypos = ypos - spacing
+			end
+			
+			-- Add a little extra space between players
+			ypos = ypos - 5
+			total_capacity = total_capacity + player.total_capacity
+		end
+		
+		-- Add total route capacity summary
+		local total_capacity_node = gui.new_text_node(
+			vmath.vector3(col1_x, ypos, 0.95),
+			"Total Route Capacity: " .. total_capacity .. " passengers (Demand: " .. 
+			route_info.current_passenger_demand .. ")"
+		)
+		gui.set_id(total_capacity_node, "route_total_capacity")
+		gui.set_font(total_capacity_node, "system_font")
+		gui.set_color(total_capacity_node, vmath.vector4(1, 0.8, 0.8, 1))
+		table.insert(self.popup_player_info, total_capacity_node)
+	else
+		-- No planes on route
+		self.popup_player_info = {}
+		local player_info_node = gui.new_text_node(
+			vmath.vector3(col1_x, screen_height/2 + popup_height/2 - 230, 0.95),
+			player_text
+		)
+		gui.set_id(player_info_node, "route_popup_player_info")
+		gui.set_font(player_info_node, "system_font")
+		gui.set_color(player_info_node, vmath.vector4(1, 1, 1, 1))
+		table.insert(self.popup_player_info, player_info_node)
+	end
+	
+	-- RIGHT COLUMN ELEMENTS - Starting with Valid Plane Categories
 	
 	-- Create valid plane categories text
 	local categories_text = "Valid Plane Categories: "
@@ -506,7 +733,7 @@ function show_route_popup(self, city1, city2)
 	end
 	
 	self.popup_categories = gui.new_text_node(
-		vmath.vector3(screen_width/2, screen_height/2 + popup_height/2 - 150, 0.95),
+		vmath.vector3(col2_x, screen_height/2 + popup_height/2 - 70, 0.95),
 		categories_text
 	)
 	gui.set_id(self.popup_categories, "route_popup_categories")
@@ -515,7 +742,7 @@ function show_route_popup(self, city1, city2)
 	
 	-- Create section title for available aircraft
 	self.popup_aircraft_title = gui.new_text_node(
-		vmath.vector3(screen_width/2, screen_height/2 + popup_height/2 - 200, 0.95),
+		vmath.vector3(col2_x, screen_height/2 + popup_height/2 - 110, 0.95),
 		"Available Aircraft for This Route:"
 	)
 	gui.set_id(self.popup_aircraft_title, "route_popup_aircraft_title")
@@ -528,9 +755,9 @@ function show_route_popup(self, city1, city2)
 	
 	if #eligible_planes > 0 then
 		-- Create scrollable area for planes
-		local start_y = screen_height/2 + popup_height/2 - 240
+		local start_y = screen_height/2 + popup_height/2 - 150
 		local spacing = 40  -- Increased spacing for buttons
-		local button_width = 350
+		local button_width = 450  -- Wider buttons for the right column
 		local button_height = 30
 		
 		for i, plane_data in ipairs(eligible_planes) do
@@ -538,16 +765,22 @@ function show_route_popup(self, city1, city2)
 			
 			-- Create button background
 			local button = gui.new_box_node(
-				vmath.vector3(screen_width/2, y_pos, 0.95),
+				vmath.vector3(col2_x, y_pos, 0.95),
 				vmath.vector3(button_width, button_height, 0)
 			)
 			gui.set_id(button, "plane_button_" .. i)
 			gui.set_color(button, vmath.vector4(0.3, 0.3, 0.3, 1))
 			
+			-- Show passenger capacity in button text
+			local capacity_text = ""
+			if plane_data.plane.spec_passCapacity then
+				capacity_text = " (Capacity: " .. plane_data.plane.spec_passCapacity .. " passengers)"
+			end
+			
 			-- Create button text
 			local button_text = gui.new_text_node(
-				vmath.vector3(screen_width/2, y_pos, 0.96),
-				plane_data.plane.planeName .. " (x" .. plane_data.count .. ")"
+				vmath.vector3(col2_x, y_pos, 0.96),
+				plane_data.plane.planeName .. " (x" .. plane_data.count .. ")" .. capacity_text
 			)
 			gui.set_id(button_text, "plane_button_text_" .. i)
 			gui.set_font(button_text, "system_font")
@@ -566,7 +799,7 @@ function show_route_popup(self, city1, city2)
 	else
 		-- No eligible planes message
 		self.popup_aircraft_list = gui.new_text_node(
-			vmath.vector3(screen_width/2, screen_height/2 + popup_height/2 - 240, 0.95),
+			vmath.vector3(col2_x, screen_height/2 + popup_height/2 - 150, 0.95),
 			"No suitable aircraft in your fleet for this route."
 		)
 		gui.set_id(self.popup_aircraft_list, "route_popup_aircraft_list")
@@ -576,7 +809,7 @@ function show_route_popup(self, city1, city2)
 		table.insert(self.popup_aircraft_nodes, self.popup_aircraft_list)
 	end
 	
-	-- Create close button
+	-- Create close button (centered at bottom)
 	self.popup_close_button = gui.new_box_node(
 		vmath.vector3(screen_width/2, screen_height/2 - popup_height/2 + 40, 0.95),
 		vmath.vector3(120, 40, 0)
@@ -598,7 +831,8 @@ function show_route_popup(self, city1, city2)
 		city2 = city2,
 		distance = distance,
 		valid_categories = valid_categories,
-		eligible_planes = eligible_planes
+		eligible_planes = eligible_planes,
+		route_info = route_info
 	}
 	
 	-- Initialize button state
@@ -619,6 +853,15 @@ function hide_route_popup(self)
 	gui.delete_node(self.popup_airports)
 	gui.delete_node(self.popup_categories)
 	gui.delete_node(self.popup_aircraft_title)
+	gui.delete_node(self.popup_demand) -- Demand node
+	gui.delete_node(self.popup_price) -- Price node
+	
+	-- Delete player info nodes
+	if self.popup_player_info then
+		for _, node in ipairs(self.popup_player_info) do
+			gui.delete_node(node)
+		end
+	end
 	
 	-- Delete aircraft nodes
 	for _, node in ipairs(self.popup_aircraft_nodes) do
@@ -640,6 +883,9 @@ function hide_route_popup(self)
 	self.popup_plane_buttons = nil
 	self.popup_close_button = nil
 	self.popup_close_text = nil
+	self.popup_demand = nil
+	self.popup_price = nil
+	self.popup_player_info = nil -- Add this new field
 	self.close_button_hover = false
 	self.popup_visible = false
 	self.current_route = nil

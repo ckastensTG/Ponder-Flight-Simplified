@@ -76,14 +76,14 @@ function update_timer_display(self)
 	gui.set_text(self.text_year, "Year " .. currentYear)
 
 	-- Update cash text
-	gui.set_text(self.text_cash,G_UI_text.cashText .. string.format("%.1f", G_cashOnHand/1000) .. " " .. G_UI_text.dev_devCostUnits)
+	gui.set_text(self.text_cash,G_UI_text.cashText .. string.format("%.2f", G_cashOnHand/1000) .. " " .. G_UI_text.dev_devCostUnits)
 end
 
 function on_message(self, message_id, message, sender)
 	self.druid:on_message(message_id, message, sender)
 	
 	if message_id == hash("set_buttons_text") then
-		gui.set_text(self.text_cash,G_UI_text.cashText .. string.format("%.1f", G_cashOnHand/1000) .. " " .. G_UI_text.dev_devCostUnits)
+		gui.set_text(self.text_cash,G_UI_text.cashText .. string.format("%.2f", G_cashOnHand/1000) .. " " .. G_UI_text.dev_devCostUnits)
 		gui.set_text(self.text_debt,G_UI_text.debtText .. "0")
 		gui.set_text(self.text_planesdev,G_UI_text.planesdevText)
 		gui.set_text(self.text_investment,G_UI_text.investmentText)

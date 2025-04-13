@@ -418,10 +418,13 @@ function final(self)
 end
 
 function update(self, dt)
-	-- Update the game timer if it's running
+	-- Apply time scale to dt
+	local scaledDt = dt * G_gameTimer.timeScale
+	
+	-- Update game timer
 	if G_gameTimer.isRunning then
-		-- Apply time scale to dt
-		local scaledDt = dt * G_gameTimer.timeScale
+		-- Store previous time before updating
+		local previous_time = G_gameTimer.totalSeconds
 		
 		-- Update total seconds
 		G_gameTimer.totalSeconds = G_gameTimer.totalSeconds + scaledDt
@@ -430,12 +433,20 @@ function update(self, dt)
 		G_gameTimer.minutes = math.floor(G_gameTimer.totalSeconds / 60)
 		G_gameTimer.seconds = math.floor(G_gameTimer.totalSeconds % 60)
 		
+		-- TICKET SALES - Calculate once per year (using proper year length)
+		local year_length = 12 -- 12 seconds per game year (30 minutes = 1800 seconds for 150 years)
+		local previous_year = math.floor(previous_time / year_length)
+		local current_year = math.floor(G_gameTimer.totalSeconds / year_length)
+		
+		-- Check if we've crossed a year boundary
+		if current_year > previous_year then
+			print("Year " .. current_year .. " completed - processing ticket sales")
+			process_ticket_sales()
+		end
+		
 		-- Check if session time is up
 		if G_gameTimer.totalSeconds >= G_gameTimer.sessionDuration then
 			G_gameTimer.isRunning = false
-			-- Notify that time is up
-			-- CKTODO: Put in something else here later
---			msg.post("HUDinfo", "time_up")
 		end
 	end
 
@@ -575,7 +586,150 @@ function update(self, dt)
 			G_researchQueue[id] = nil
 		end
 	end
+end
 
+-- Function to process ticket sales for all airline teams
+function process_ticket_sales()
+	-- Get the routes data from Map_Locs
+	print("Starting process_ticket_sales")
+	local map_data = require("LocFiles.Map_Locs")
+	local routes = map_data.routes
+	
+	-- Print the number of routes found
+	print("Found " .. #routes .. " routes")
+	
+	-- Track total sales per team
+	local team_sales = {}
+	
+	-- Days in a year - used to convert daily passenger numbers to annual
+	local days_per_year = 365
+	
+	-- Process each route
+	for i, route in ipairs(routes) do
+		print("Checking route " .. i .. ": " .. route.from .. " to " .. route.to)
+		
+		-- Check if the route has player planes
+		if route.player_planes then
+			print("Route has " .. #route.player_planes .. " player entries")
+		else
+			print("Route has no player_planes table")
+		end
+		
+		-- Only process routes with players and planes
+		if route.player_planes and #route.player_planes > 0 then
+			local route_demand = route.current_passenger_demand
+			local ticket_price = route.ticket_price
+			local total_capacity = route.total_passenger_capacity or 0
+			
+			print("Route demand: " .. route_demand .. ", price: " .. ticket_price .. ", capacity: " .. total_capacity)
+			
+			-- Only process routes with capacity and price
+			if total_capacity > 0 and ticket_price > 0 then
+				-- Calculate actual passengers based on demand and capacity
+				local actual_passengers
+				local demand_ratio = 1.0
+				
+				if total_capacity > route_demand then
+					-- More capacity than demand, so reduce proportionally
+					demand_ratio = route_demand / total_capacity
+					actual_passengers = route_demand
+				else
+					-- Capacity is less than or equal to demand
+					actual_passengers = total_capacity
+				end
+				
+				-- Calculate sales for each player on this route
+				for _, player in ipairs(route.player_planes) do
+					local player_id = player.player_id
+					local player_capacity = player.total_capacity or 0
+					
+					-- Calculate player's passengers and revenue
+					local player_passengers = player_capacity * demand_ratio
+					-- Multiply by days in year to get annual revenue
+					local player_revenue = player_passengers * ticket_price * days_per_year
+					
+					print("Player " .. player_id .. " has capacity " .. player_capacity .. 
+						  ", gets " .. math.floor(player_passengers) .. " passengers, revenue: " .. 
+						  math.floor(player_revenue))
+					
+					-- Initialize if not exists
+					if not team_sales[player_id] then
+						team_sales[player_id] = 0
+					end
+					
+					-- Add to team's sales
+					team_sales[player_id] = team_sales[player_id] + player_revenue
+				end
+			else
+				print("Skipping route - insufficient capacity or price")
+			end
+		else
+			print("Skipping route - no players assigned")
+		end
+	end
+	
+	-- Print summary of team sales
+	print("Team sales summary:")
+	local has_sales = false
+	for team_id, revenue in pairs(team_sales) do
+		print("- Team " .. team_id .. ": $" .. math.floor(revenue))
+		has_sales = true
+	end
+	
+	if not has_sales then
+		print("No team sales found!")
+	end
+	
+	print("About to apply team sales")
+	
+	-- Apply sales to each team's cash
+	for team_id, revenue in pairs(team_sales) do
+		-- Check if this is a valid team ID
+		if S_teamData[team_id] then
+			-- Convert revenue to millions and round to whole number
+			local revenue_in_millions = math.floor(revenue / 1000000)
+			
+			-- If this is the current team and it's an airline, update the global cash amount first
+			if team_id == G_teamId and G_teamType == "airline" then
+				-- Update global cash directly (it's the most up-to-date value)
+				print("Updating current team " .. team_id .. " cash from " .. G_cashOnHand .. " to " .. (G_cashOnHand + revenue_in_millions) .. " million")
+				G_cashOnHand = G_cashOnHand + revenue_in_millions
+				-- Then synchronize with team data
+				S_teamData[team_id].cashOnHand = G_cashOnHand
+			else
+				-- For other teams, update their team data directly
+				local old_cash = S_teamData[team_id].cashOnHand or 0
+				print("Updating team " .. team_id .. " cash from " .. old_cash .. " to " .. (old_cash + revenue_in_millions) .. " million")
+				S_teamData[team_id].cashOnHand = old_cash + revenue_in_millions
+			end
+			
+			-- Log the revenue
+			print("Team " .. team_id .. " earned $" .. math.floor(revenue) .. " (" .. revenue_in_millions .. " million) in annual ticket sales")
+		else
+			print("Team " .. team_id .. " not found in S_teamData")
+		end
+	end
+	
+	-- Show notification to current team if they earned revenue
+	if team_sales[G_teamId] and G_teamType == "airline" then
+		print("Showing notification to current team")
+		local revenue_in_millions = math.floor(team_sales[G_teamId] / 1000000)
+		msg.post("NotificationBox", "show_notification", {
+			title = "Annual Ticket Sales",
+			message = "Your airline earned $" .. revenue_in_millions .. " million in ticket sales",
+			duration = 5
+		})
+	else
+		print("Not showing notification - current team has no revenue or is not airline")
+		print("G_teamId: " .. G_teamId .. ", G_teamType: " .. G_teamType)
+		if team_sales[G_teamId] then
+			print("Current team revenue: " .. team_sales[G_teamId])
+		else
+			print("Current team has no revenue entry")
+		end
+	end
+	
+	print("Finished process_ticket_sales")
 end
 
 function fixed_update(self, dt)
