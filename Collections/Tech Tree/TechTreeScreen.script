@@ -228,10 +228,6 @@ end
 function can_unlock_tech(self, tech_type, tech_index)
 	-- Check prerequisites - previous tech must be unlocked
 
-	print(tech_type .. " " .. tech_index)
-	print("plane cat avail " .. G_planeCat_avail[tech_index - 1].avail)
-	print("engine type avail " .. G_planeType_avail[tech_index - 1].avail)
-
 	if tech_index > 1 then
 		local is_previous_unlocked = false
 		
@@ -250,8 +246,6 @@ function can_unlock_tech(self, tech_type, tech_index)
 	
 	-- Check if the player has enough cash
 	local cost = self.research_costs[tech_type][tech_index] or 0
-	print("cost " .. cost)
-	print("cash on hand " .. G_cashOnHand)
 	if G_cashOnHand < cost then
 		return false
 	end

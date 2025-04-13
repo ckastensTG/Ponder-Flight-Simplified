@@ -669,7 +669,7 @@ function process_ticket_sales()
 	end
 	
 	-- Print summary of team sales
-	print("Team sales summary:")
+--	print("Team sales summary:")
 	local has_sales = false
 	for team_id, revenue in pairs(team_sales) do
 		print("- Team " .. team_id .. ": $" .. math.floor(revenue))
@@ -677,10 +677,10 @@ function process_ticket_sales()
 	end
 	
 	if not has_sales then
-		print("No team sales found!")
+--		print("No team sales found!")
 	end
 	
-	print("About to apply team sales")
+--	print("About to apply team sales")
 	
 	-- Apply sales to each team's cash
 	for team_id, revenue in pairs(team_sales) do
@@ -720,16 +720,16 @@ function process_ticket_sales()
 			duration = 5
 		})
 	else
-		print("Not showing notification - current team has no revenue or is not airline")
-		print("G_teamId: " .. G_teamId .. ", G_teamType: " .. G_teamType)
+--		print("Not showing notification - current team has no revenue or is not airline")
+--		print("G_teamId: " .. G_teamId .. ", G_teamType: " .. G_teamType)
 		if team_sales[G_teamId] then
-			print("Current team revenue: " .. team_sales[G_teamId])
+--			print("Current team revenue: " .. team_sales[G_teamId])
 		else
-			print("Current team has no revenue entry")
+--			print("Current team has no revenue entry")
 		end
 	end
 	
-	print("Finished process_ticket_sales")
+--	print("Finished process_ticket_sales")
 end
 
 function fixed_update(self, dt)
