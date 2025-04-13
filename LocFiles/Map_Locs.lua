@@ -3,7 +3,9 @@ local cities = {
     "Littleton", "Littlesis", "Jackville", "Bigton", "Kastenville", 
     "Dangen", "Mono", "Kuma", "Gristown", "Mayfield", "Bristol",
     "Redrock", "Oakvale", "Silverport", "Westfield", "Riverdale", 
-    "Pinehaven", "Meadowbrook", "Sunnydale", "Frostpeak"
+    "Pinehaven", "Meadowbrook", "Sunnydale", "Frostpeak",
+    "Harborview", "Cedarville", "Mapleton", "Brookside", "Lakeshire", 
+    "Elmwood", "Mountaingate", "Valleyforge"
 }
 
 local city_data = {
@@ -26,7 +28,15 @@ local city_data = {
     ["Pinehaven"] = {pos = {1100,600}, category = 2},
     ["Meadowbrook"] = {pos = {480,180}, category = 1},
     ["Sunnydale"] = {pos = {950,400}, category = 3},
-    ["Frostpeak"] = {pos = {300,100}, category = 2}
+    ["Frostpeak"] = {pos = {300,100}, category = 2},
+    ["Harborview"] = {pos = {600,100}, category = 1},
+    ["Cedarville"] = {pos = {250,400}, category = 1},
+    ["Mapleton"] = {pos = {700,400}, category = 1},
+    ["Brookside"] = {pos = {850,300}, category = 1},
+    ["Lakeshire"] = {pos = {450,400}, category = 1},
+    ["Elmwood"] = {pos = {1000,250}, category = 1},
+    ["Mountaingate"] = {pos = {850,550}, category = 2},
+    ["Valleyforge"] = {pos = {350,450}, category = 2}
 }
 
 -- Function to calculate base passenger demand based on airport categories and distance
@@ -86,7 +96,18 @@ local function calculate_base_demand(from_category, to_category, distance)
     return 10
 end
 
+-- TEMPORARY: raising these values 4x for testing
 -- Function to calculate ticket price based on distance
+local function calculate_ticket_price(distance)
+    if distance < 500 then
+        return 400
+    elseif distance < 3000 then
+        return 1000
+    else
+        return 2000
+    end
+end
+--[[
 local function calculate_ticket_price(distance)
     if distance < 500 then
         return 100
@@ -95,7 +116,9 @@ local function calculate_ticket_price(distance)
     else
         return 500
     end
-end
+    end
+--]]
+
 
 -- Generate all possible routes (each city can connect to every other city)
 local routes = {}
@@ -166,6 +189,14 @@ return {
         {name = "Meadowbrook", pos = {480,180}, category = 1},
         {name = "Sunnydale", pos = {950,400}, category = 3},
         {name = "Frostpeak", pos = {300,100}, category = 2},
+        {name = "Harborview", pos = {600,100}, category = 1},
+        {name = "Cedarville", pos = {250,400}, category = 1},
+        {name = "Mapleton", pos = {700,400}, category = 1},
+        {name = "Brookside", pos = {850,300}, category = 1},
+        {name = "Lakeshire", pos = {450,400}, category = 1},
+        {name = "Elmwood", pos = {1000,250}, category = 1},
+        {name = "Mountaingate", pos = {850,550}, category = 2},
+        {name = "Valleyforge", pos = {350,450}, category = 2}
     },
     routes = routes
 }

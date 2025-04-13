@@ -17,18 +17,19 @@ local TEXT_COLORS = {
 }
 
 -- Research cost and time information
+-- USING low values here for testing
 local TECH_INFO = {
 	plane_cat = {
 		[1] = { cost = 0, time = 0, name = "Small" },
-		[2] = { cost = 500, time = 30, name = "Medium" },
-		[3] = { cost = 1750, time = 90, name = "Large" },
-		[4] = { cost = 3750, time = 150, name = "Mega" }
+		[2] = { cost = 100, time = 30, name = "Medium" },
+		[3] = { cost = 200, time = 90, name = "Large" },
+		[4] = { cost = 300, time = 150, name = "Mega" }
 	},
 	engine_type = {
 		[1] = { cost = 0, time = 0, name = "Piston" },
-		[2] = { cost = 750, time = 45, name = "Turboprop" },
-		[3] = { cost = 2000, time = 120, name = "Turbojet" },
-		[4] = { cost = 3250, time = 180, name = "Turbofan" }
+		[2] = { cost = 100, time = 45, name = "Turboprop" },
+		[3] = { cost = 200, time = 120, name = "Turbojet" },
+		[4] = { cost = 300, time = 180, name = "Turbofan" }
 	}
 }
 
@@ -292,14 +293,15 @@ function update(self, dt)
 end
 
 function parse_button_id(self, button_id)
-	local tech_type, tech_index = button_id:match("(%w+)_(%d+)")
-	if tech_type and tech_index then
-		-- Normalize tech_type to match TECH_INFO keys
-		if tech_type == "plane_cat" or tech_type == "engine_type" then
-			return tech_type, tonumber(tech_index)
-		else
-			print("Warning: Unknown tech_type: " .. tech_type)
-		end
+	-- Match either "plane_cat" or "engine_type" followed by underscore and digits
+	if button_id:match("^plane_cat_(%d+)$") then
+		local tech_index = button_id:match("^plane_cat_(%d+)$")
+		return "plane_cat", tonumber(tech_index)
+	elseif button_id:match("^engine_type_(%d+)$") then
+		local tech_index = button_id:match("^engine_type_(%d+)$")
+		return "engine_type", tonumber(tech_index)
+	else
+		print("Warning: Unknown button_id format: " .. button_id)
 	end
 	return nil, nil
 end
@@ -332,6 +334,36 @@ function on_message(self, message_id, message, sender)
 				end
 			end
 		end
+	elseif message_id == hash("get_tech_info") then
+		-- Send tech costs and research times to TechTreeScreen
+		local costs = {
+			plane_cat = {},
+			engine_type = {}
+		}
+		
+		local times = {
+			plane_cat = {},
+			engine_type = {}
+		}
+		
+		-- Copy costs and times from TECH_INFO
+		for i = 2, 4 do
+			if TECH_INFO.plane_cat[i] then
+				costs.plane_cat[i] = TECH_INFO.plane_cat[i].cost
+				times.plane_cat[i] = TECH_INFO.plane_cat[i].time
+			end
+			
+			if TECH_INFO.engine_type[i] then
+				costs.engine_type[i] = TECH_INFO.engine_type[i].cost
+				times.engine_type[i] = TECH_INFO.engine_type[i].time
+			end
+		end
+		
+		-- Send the tech info to TechTreeScreen
+		msg.post("/TechTreeScript#TechTreeScreen", "set_tech_info", {
+			costs = costs,
+			times = times
+		})
 	end
 end
 

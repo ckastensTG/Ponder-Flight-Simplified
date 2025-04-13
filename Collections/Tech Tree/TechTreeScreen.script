@@ -15,31 +15,34 @@ function init(self)
 	self.research_costs = {
 		plane_cat = {
 			-- Small plane is initially available, costs for Medium, Large, Mega
-			[2] = 500,  -- Medium costs 500M
-			[3] = 1750, -- Large costs 1750M
-			[4] = 3750  -- Mega costs 3750M
+			[2] = 0,  -- Will be set by GUI script
+			[3] = 0,  -- Will be set by GUI script
+			[4] = 0   -- Will be set by GUI script
 		},
 		engine_type = {
 			-- Piston is initially available, costs for Turboprop, Turbojet, Turbofan
-			[2] = 750,  -- Turboprop costs 750M
-			[3] = 2000, -- Turbojet costs 2000M
-			[4] = 3250  -- Turbofan costs 3250M
+			[2] = 0,  -- Will be set by GUI script
+			[3] = 0,  -- Will be set by GUI script
+			[4] = 0   -- Will be set by GUI script
 		}
 	}
 	
 	-- Define research time for each technology (in seconds)
 	self.research_times = {
 		plane_cat = {
-			[2] = 30,  -- Medium takes 30 seconds
-			[3] = 90,  -- Large takes 90 seconds
-			[4] = 150  -- Mega takes 150 seconds
+			[2] = 0,  -- Will be set by GUI script
+			[3] = 0,  -- Will be set by GUI script
+			[4] = 0   -- Will be set by GUI script
 		},
 		engine_type = {
-			[2] = 45,  -- Turboprop takes 45 seconds
-			[3] = 120, -- Turbojet takes 120 seconds
-			[4] = 180  -- Turbofan takes 180 seconds
+			[2] = 0,  -- Will be set by GUI script
+			[3] = 0,  -- Will be set by GUI script
+			[4] = 0   -- Will be set by GUI script
 		}
 	}
+
+	-- Request tech costs and times from GUI script
+	msg.post("/TechTreeGUIContainer#TechTreeGUI", "get_tech_info")
 end
 
 function final(self)
@@ -74,7 +77,7 @@ function update(self, dt)
 				end
 				
 				-- Post a notification
-				msg.post("ProxyCollection:/ProxyCalls/NotificationBox", "show_notification", {
+				msg.post("ProxyCollection:/NotificationBox", "show_notification", {
 					title = "Research Complete",
 					message = tech_name .. " technology has been unlocked!",
 					duration = 5  -- Show for 5 seconds
@@ -134,7 +137,7 @@ function on_message(self, message_id, message, sender)
 				end
 				
 				-- Post a notification
-				msg.post("ProxyCollection:/ProxyCalls/NotificationBox", "show_notification", {
+				msg.post("ProxyCollection:/NotificationBox", "show_notification", {
 					title = "Research Started",
 					message = "Researching " .. tech_name .. " technology. Cost: $" .. cost .. "M",
 					duration = 5  -- Show for 5 seconds
@@ -155,7 +158,7 @@ function on_message(self, message_id, message, sender)
 			end
 		else
 			-- Notify the player they can't afford it or prerequisites aren't met
-			msg.post("ProxyCollection:/ProxyCalls/NotificationBox", "show_notification", {
+			msg.post("ProxyCollection:/NotificationBox", "show_notification", {
 				title = "Cannot Research",
 				message = "Insufficient funds or prerequisites not met.",
 				duration = 3  -- Show for 3 seconds
@@ -195,12 +198,40 @@ function on_message(self, message_id, message, sender)
 	elseif message_id == hash("back_pressed") then
 		-- Return to main screen when back button is pressed
 		msg.post("ProxyCollection:/ProxyCalls", "return_to_main")
+	elseif message_id == hash("set_tech_info") then
+		-- Receive tech costs and research times from GUI
+		if message.costs then
+			-- Update research costs
+			for tech_type, costs in pairs(message.costs) do
+				for tech_index, cost in pairs(costs) do
+					if self.research_costs[tech_type] then
+						self.research_costs[tech_type][tech_index] = cost
+					end
+				end
+			end
+		end
+		
+		if message.times then
+			-- Update research times
+			for tech_type, times in pairs(message.times) do
+				for tech_index, time in pairs(times) do
+					if self.research_times[tech_type] then
+						self.research_times[tech_type][tech_index] = time
+					end
+				end
+			end
+		end
 	end
 end
 
 -- Function to check if a tech can be unlocked
 function can_unlock_tech(self, tech_type, tech_index)
 	-- Check prerequisites - previous tech must be unlocked
+
+	print(tech_type .. " " .. tech_index)
+	print("plane cat avail " .. G_planeCat_avail[tech_index - 1].avail)
+	print("engine type avail " .. G_planeType_avail[tech_index - 1].avail)
+
 	if tech_index > 1 then
 		local is_previous_unlocked = false
 		
@@ -209,6 +240,8 @@ function can_unlock_tech(self, tech_type, tech_index)
 		elseif tech_type == "engine_type" and G_planeType_avail[tech_index - 1] then
 			is_previous_unlocked = G_planeType_avail[tech_index - 1].avail == 1
 		end
+
+		print(is_previous_unlocked)
 		
 		if not is_previous_unlocked then
 			return false
@@ -217,6 +250,8 @@ function can_unlock_tech(self, tech_type, tech_index)
 	
 	-- Check if the player has enough cash
 	local cost = self.research_costs[tech_type][tech_index] or 0
+	print("cost " .. cost)
+	print("cash on hand " .. G_cashOnHand)
 	if G_cashOnHand < cost then
 		return false
 	end

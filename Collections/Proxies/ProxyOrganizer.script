@@ -572,7 +572,7 @@ function update(self, dt)
 					end
 					
 					-- Post a notification
-					msg.post("ProxyCollection:/ProxyCalls/NotificationBox", "show_notification", {
+					msg.post("NotificationBox", "show_notification", {
 						title = "Research Complete",
 						message = tech_name .. " technology has been unlocked!",
 						duration = 5  -- Show for 5 seconds
@@ -606,13 +606,13 @@ function process_ticket_sales()
 	
 	-- Process each route
 	for i, route in ipairs(routes) do
-		print("Checking route " .. i .. ": " .. route.from .. " to " .. route.to)
+--		print("Checking route " .. i .. ": " .. route.from .. " to " .. route.to)
 		
 		-- Check if the route has player planes
 		if route.player_planes then
-			print("Route has " .. #route.player_planes .. " player entries")
+--			print("Route has " .. #route.player_planes .. " player entries")
 		else
-			print("Route has no player_planes table")
+--			print("Route has no player_planes table")
 		end
 		
 		-- Only process routes with players and planes
@@ -661,10 +661,10 @@ function process_ticket_sales()
 					team_sales[player_id] = team_sales[player_id] + player_revenue
 				end
 			else
-				print("Skipping route - insufficient capacity or price")
+--				print("Skipping route - insufficient capacity or price")
 			end
 		else
-			print("Skipping route - no players assigned")
+--			print("Skipping route - no players assigned")
 		end
 	end
 	

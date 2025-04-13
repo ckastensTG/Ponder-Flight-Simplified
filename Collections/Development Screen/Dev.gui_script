@@ -24,6 +24,20 @@ function init(self)
 	end)
 	
 	self.druid:new_button("DevelopButton", function()
+
+		-- for now, allow development even if it causes negative cash
+		G_cashOnHand = G_cashOnHand - G_currentPlane.devCost
+		-- Open the naming popup if enough cash
+		msg.post("NamePopup", "show_popup", {
+			callback_url = msg.url(),
+			callback_message = "name_selected",
+			title = "Name Your Airplane",
+			message = "Please enter a name for your airplane:",
+			placeholder = "Enter name here",
+			confirm_text = "Confirm"
+		})
+
+		--[[
 		-- Check if player has enough cash to develop the plane
 		if G_currentPlane.devCost > G_cashOnHand then
 			-- Show error message if not enough cash
@@ -47,6 +61,7 @@ function init(self)
 				confirm_text = "Confirm"
 			})
 		end
+		--]]
 	end)
 
 	-- Set the development time based on the plane size category
@@ -54,24 +69,24 @@ function init(self)
 	local devCost = 0
 	if G_currentPlane.planeCat == 1 then
 		devTime = 4*12
-		devCost = 2000  -- Small: $2 billion = 2,000 million
+		devCost = 250  -- Small: $250 million
 	elseif G_currentPlane.planeCat == 2 then
 		devTime = 5*12
-		devCost = 4500  -- Medium: $4.5 billion = 4,500 million
+		devCost = 600  -- Medium: $600 million
 	elseif G_currentPlane.planeCat == 3 then
 		devTime = 6*12
-		devCost = 10000  -- Large narrow-body: $10 billion = 10,000 million
+		devCost = 3000  -- Large narrow-body: $3 billion
 	elseif G_currentPlane.planeCat == 4 then
 		devTime = 7*12
-		devCost = 20000  -- Wide-body mega: $20 billion = 20,000 million
+		devCost = 10000  -- Wide-body mega: $10 billion
 	elseif G_currentPlane.planeCat == 5 then
 		devTime = 8*12
-		devCost = 25000  -- Supersonic: $25 billion = 25,000 million
+		devCost = 25000  -- Supersonic: $25 billion
 	end
 
 -- temp for debugging
-	devTime = 5
-	devCost = 1000
+--	devTime = 5
+--	devCost = 1000
 
 	G_currentPlane.devTime = devTime
 	G_currentPlane.devCost = devCost

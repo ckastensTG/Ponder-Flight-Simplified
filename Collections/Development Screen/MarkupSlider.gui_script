@@ -17,7 +17,7 @@ function init(self)
 	druid.register("slider", slider)
 	self.slider = self.druid:new_slider("slider_pin", vmath.vector3(118, 0, 0), on_slider_change)
 	self.slider:set_steps({0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95})
-	self.slider:set(G_currentPlane.markup/2-0.05)
+	self.slider:set(0.5/2-0.05)
 end
 
 -- "final" is a required function for the correct Druid workflow

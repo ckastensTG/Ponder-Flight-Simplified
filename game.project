@@ -13,7 +13,7 @@ high_dpi = 1
 input_method = HiddenInputField
 
 [html5]
-scale_mode = stretch
+scale_mode = fit
 
 [physics]
 type = 3D
