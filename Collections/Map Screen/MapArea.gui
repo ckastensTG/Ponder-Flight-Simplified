@@ -1,0 +1,26 @@
+script: "/Collections/Map Screen/MapArea.gui_script"
+fonts {
+  name: "system_font"
+  font: "/Fonts/Roboto-Regular.font"
+}
+nodes {
+  position {
+    x: 685.0
+    y: 417.0
+  }
+  size {
+    x: 1300.0
+    y: 650.0
+  }
+  color {
+    x: 0.902
+    y: 0.902
+    z: 0.8
+  }
+  type: TYPE_BOX
+  id: "MapBG"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+}
+material: "/builtins/materials/gui.material"
+adjust_reference: ADJUST_REFERENCE_PARENT
